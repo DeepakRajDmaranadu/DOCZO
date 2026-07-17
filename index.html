@@ -632,6 +632,13 @@ async function fetchImageBytes(url) {
   }
   
   for (const tUrl of urlsToTry) {
+    // Try Netlify Serverless Function first (production bypass)
+    try {
+      const proxyUrl = window.location.origin + '/.netlify/functions/download?url=' + encodeURIComponent(tUrl);
+      const res = await fetch(proxyUrl);
+      if (res.ok) return await res.arrayBuffer();
+    } catch (e) {}
+
     // Try Direct
     try {
       const res = await fetch(tUrl);
