@@ -625,10 +625,13 @@ async function fetchImageBytes(url) {
   let directUrl = getDriveDirectLink(url);
   const fileId = extractFileId(url);
   
-  const urlsToTry = [directUrl];
+  const urlsToTry = [];
   if (fileId) {
-    urlsToTry.push(`https://lh3.googleusercontent.com/d/${fileId}`);
+    urlsToTry.push(`https://drive.usercontent.com/download?id=${fileId}&export=download`);
     urlsToTry.push(`https://docs.google.com/uc?export=download&id=${fileId}`);
+    urlsToTry.push(`https://lh3.googleusercontent.com/d/${fileId}`);
+  } else {
+    urlsToTry.push(url);
   }
   
   for (const tUrl of urlsToTry) {
