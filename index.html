@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DocGen Pro · Document Merge Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg: #09090b;
+  --surface: #121214;
+  --surface2: #1a1a1e;
+  --surface3: #26262b;
+  --border: #2e2e35;
+  --border2: #454550;
+  --ink: #f4f4f5;
+  --ink2: #d4d4d8;
+  --ink3: #a1a1aa;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-l: rgba(99, 102, 241, 0.15);
+  --primary-m: #4f46e5;
+  --green: #10b981;
+  --green-l: rgba(16, 185, 129, 0.15);
+  --green-d: #34d399;
+  --violet: #8b5cf6;
+  --violet-l: rgba(139, 92, 246, 0.15);
+  --red: #ef4444;
+  --red-l: rgba(239, 68, 68, 0.15);
+  --r: 16px;
+  --r2: 12px;
+  --r3: 8px;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+html{font-size:15px;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;min-height:100vh}
+#root{min-height:100vh}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(18, 18, 20, 0.8);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-icon {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--primary) 0%, #312e81 100%);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+}
+.brand-name { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; color: var(--ink); }
+.brand-tag { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--primary); background: var(--primary-l); border: 1px solid rgba(99, 102, 241, 0.3); padding: 2px 10px; border-radius: 99px; font-weight: 600; }
+
+.stepper { display: flex; align-items: center; gap: 0; }
+.step-item { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; z-index: 1; }
+.step-circle {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+  border: 2px solid var(--border2); background: var(--surface); color: var(--ink3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 6px;
+}
+.step-item.active .step-circle { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 0 15px var(--primary-m); }
+.step-item.done .step-circle { background: var(--green-l); border-color: var(--green); color: var(--green-d); }
+.step-label { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink3); transition: color 0.3s; }
+.step-item.active .step-label { color: var(--primary); }
+.step-item.done .step-label { color: var(--green-d); }
+.step-line { flex: 1; height: 2px; background: var(--border); margin-bottom: 20px; transition: background 0.3s; }
+.step-line.done { background: var(--green); }
+
+.page-wrap { max-width: 760px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.ph { margin-bottom: 28px; text-align: center; }
+.ph-title { font-size: 26px; font-weight: 800; letter-spacing: -0.6px; color: var(--ink); margin-bottom: 8px; }
+.ph-desc { font-size: 14px; color: var(--ink3); line-height: 1.6; max-width: 580px; margin: 0 auto; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 32px 36px;
+  box-shadow: var(--shadow);
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: none } }
+.card-section { margin-bottom: 24px; }
+.card-section:last-child { margin-bottom: 0; }
+
+.drop-zone {
+  border: 2px dashed var(--border2); border-radius: var(--r2);
+  padding: 48px 24px; text-align: center; cursor: pointer;
+  transition: all 0.25s ease; position: relative; background: var(--surface2);
+}
+.drop-zone:hover, .drop-zone.drag { border-color: var(--primary); background: var(--primary-l); }
+.drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.dz-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: var(--surface3); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  color: var(--ink2); transition: transform 0.2s;
+}
+.drop-zone:hover .dz-icon { transform: translateY(-3px) scale(1.05); color: var(--primary); }
+.dz-title { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.dz-hint { font-size: 12px; color: var(--ink3); }
+.dz-hint code { font-family: 'JetBrains Mono', monospace; background: var(--surface3); padding: 1px 6px; border-radius: 4px; font-size: 11px; color: var(--violet); }
+
+.file-badge {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 20px; margin-top: 16px;
+  background: var(--green-l); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--r2);
+  flex-wrap: wrap; display: none;
+}
+.fb-icon { width: 42px; height: 42px; border-radius: 10px; background: var(--surface3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fb-text { flex: 1; min-width: 0; }
+.fb-name { font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fb-meta { font-size: 11px; color: var(--ink3); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+.fb-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--green-d); background: rgba(16, 185, 129, 0.1); padding: 6px 14px; border-radius: 99px; border: 1px solid rgba(16, 185, 129, 0.3); flex-shrink: 0; align-self: center; }
+
+.alert { display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px; border-radius: var(--r2); font-size: 13.5px; margin-bottom: 20px; line-height: 1.5; display: none; }
+.alert-error { background: var(--red-l); border: 1px solid rgba(239, 68, 68, 0.2); color: #fda4af; }
+.alert-info { background: var(--primary-l); border: 1px solid rgba(99, 102, 241, 0.2); color: var(--ink2); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border-radius: var(--r2); font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; white-space: nowrap; font-family: 'Outfit', sans-serif; line-height: 1; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none!important; box-shadow: none!important; }
+.btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4); }
+.btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6); }
+.btn-green { background: var(--green); color: #fff; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3); }
+.btn-green:hover:not(:disabled) { background: #059669; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5); }
+.btn-violet { background: var(--violet); color: #fff; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3); }
+.btn-violet:hover:not(:disabled) { background: #7c3aed; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5); }
+.btn-ghost { background: var(--surface2); color: var(--ink2); border: 1px solid var(--border); }
+.btn-ghost:hover:not(:disabled) { background: var(--surface3); border-color: var(--border2); color: var(--ink); }
+.btn-sm { padding: 8px 16px; font-size: 13px; border-radius: var(--r3); }
+.row-btns { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+
+.preview-wrap { overflow-x: auto; border-radius: var(--r2); border: 1px solid var(--border); margin-top: 20px; background: var(--surface2); display: none; }
+.preview-bar { padding: 10px 16px; background: var(--surface3); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.preview-bar-l { font-size: 12.5px; font-weight: 600; color: var(--ink2); display: flex; align-items: center; gap: 8px; }
+.preview-bar-r { font-size: 11px; color: var(--ink3); font-family: 'JetBrains Mono', monospace; }
+.preview-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.preview-table th { padding: 10px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); font-weight: 600; color: var(--ink2); text-align: left; white-space: nowrap; }
+.preview-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: var(--ink3); white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 12px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+.preview-table tr:last-child td { border-bottom: none; }
+.preview-table tr:hover td { background: var(--surface3); color: var(--ink); }
+
+.map-row { display: grid; grid-template-columns: 1fr 28px 1fr; align-items: center; gap: 10px; margin-bottom: 10px; }
+.map-var { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; padding: 10px 14px; border-radius: var(--r2); background: var(--surface2); border: 1px solid var(--border); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+.map-arrow { display: flex; align-items: center; justify-content: center; color: var(--ink3); }
+.map-select { background: var(--surface); border: 1px solid var(--border); color: var(--ink); border-radius: var(--r2); padding: 10px 36px 10px 14px; font-size: 13.5px; font-family: 'Outfit', sans-serif; cursor: pointer; width: 100%; transition: all 0.2s; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+.map-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-l); }
+.map-select.matched { border-color: var(--green); background-color: var(--green-l); color: var(--ink); }
+.map-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.map-title { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+.map-badge { font-size: 11.5px; font-family: 'JetBrains Mono', monospace; font-weight: 600; background: var(--primary-l); color: var(--ink); padding: 4px 10px; border-radius: 99px; border: 1px solid rgba(99,102,241,0.3); }
+
+.fn-row { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r2); margin-bottom: 24px; }
+.fn-label { font-size: 13px; color: var(--ink2); font-weight: 600; white-space: nowrap; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+.prog-wrap { padding: 16px 0 6px; display: none; }
+.prog-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.prog-text { font-size: 14px; font-weight: 600; color: var(--ink); }
+.prog-pct { font-size: 14px; font-weight: 700; color: var(--primary); font-family: 'JetBrains Mono', monospace; }
+.prog-track { background: var(--border); border-radius: 99px; height: 8px; overflow: hidden; }
+.prog-fill { height: 0%; border-radius: 99px; background: linear-gradient(90deg, var(--primary), var(--violet)); transition: width 0.3s ease; }
+.prog-sub { font-size: 12px; color: var(--ink3); margin-top: 8px; font-family: 'JetBrains Mono', monospace; }
+
+.stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+.stat-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px 18px; }
+.stat-lbl { font-size: 11px; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.stat-val { font-size: 24px; font-weight: 800; color: var(--ink); line-height: 1.1; }
+.stat-sub { font-size: 11px; color: var(--ink3); margin-top: 3px; }
+
+.dl-block { border: 1px solid var(--border); border-radius: var(--r2); overflow: hidden; margin-bottom: 16px; background: var(--surface); }
+.dl-head { padding: 14px 20px; background: var(--surface2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dl-title { font-size: 14px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.dl-body { padding: 16px 20px; }
+.dl-desc { font-size: 13px; color: var(--ink3); margin-bottom: 14px; line-height: 1.6; }
+
+.result-list { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; padding-right: 4px; }
+.result-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r3); transition: all 0.2s; animation: fadeIn 0.25s ease both; }
+.result-item:hover { border-color: var(--border2); background: var(--surface3); }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+.ri-num { font-size: 11.5px; color: var(--ink3); font-family: 'JetBrains Mono', monospace; width: 32px; flex-shrink: 0; }
+.ri-name { font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--ink2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; gap: 24px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink3); justify-content: center; }
+.footer span { display: flex; align-items: center; gap: 6px; }
+
+.tag { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 99px; font-size: 12.5px; font-weight: 600; }
+.tag-green { background: var(--green-l); color: var(--green-d); border: 1px solid rgba(16, 185, 129, 0.3); }
+.tag-violet { background: var(--violet-l); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+
+.step-panel { display: none; }
+.step-panel.active { display: block; }
+
+@media(max-width:600px){
+  .topbar { padding: 0 16px; }
+  .brand-tag { display: none; }
+  .step-label { display: none; }
+  .page-wrap { padding: 24px 16px 60px; }
+  .card { padding: 20px; }
+  .map-row { grid-template-columns: 1fr; gap: 6px; } .map-arrow { display: none; }
+  .stat-row { grid-template-columns: 1fr 1fr; } .stat-row .stat-box:last-child { grid-column: 1/-1; }
+  .row-btns { flex-direction: column; } .row-btns .btn { justify-content: center; width: 100%; }
+  .dl-head { flex-direction: column; align-items: flex-start; }
+  .fn-row { flex-direction: column; align-items: stretch; gap: 8px; } .fn-label { font-size: 12px; }
+  .file-badge { gap: 12px; }
+  .fb-pill { align-self: flex-start; margin-top: 4px; }
+}
+</style>
+</head>
+<body>
+
+<div id="root">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon" id="logo-container"></div>
+      <div class="brand-name">DocGen Studio</div>
+      <div class="brand-tag">browser-only</div>
+    </div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink3);" id="step-counter">
+      Step 1 of 4
+    </div>
+  </div>
+
+  <!-- Stepper -->
+  <div style="background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 0 16px;">
+    <div class="stepper" id="stepper-bar"></div>
+  </div>
+
+  <!-- Main Content Wrapper -->
+  <div class="page-wrap">
+    
+    <!-- Step 1: Template Upload -->
+    <div class="step-panel active" id="panel-step1">
+      <div class="ph">
+        <div class="ph-title">Upload Word Template</div>
+        <div class="ph-desc">Select a <strong>.docx</strong> file containing placeholders like <code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--surface3); color: var(--violet); padding: 1px 6px; border-radius: 4px;">&lt;&lt;VariableName&gt;&gt;</code>. You can also specify Image Placeholders using <code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--surface3); color: var(--primary); padding: 1px 6px; border-radius: 4px;">&lt;&lt;img:Photo&gt;&gt;</code> or a custom-dimensioned image box like <code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--surface3); color: var(--primary); padding: 1px 6px; border-radius: 4px;">&lt;&lt;img:Photo:60x40&gt;&gt;</code> (60mm x 40mm).</div>
+      </div>
+      <div class="card">
+        <div class="alert alert-error" id="alert-step1"></div>
+        <div class="drop-zone" id="dz-step1">
+          <input type="file" accept=".docx" id="file-input-step1"/>
+          <div class="dz-icon" id="upload-icon-step1"></div>
+          <div class="dz-title">Drop your Word Template here</div>
+          <div class="dz-hint">Supports <code>.docx</code> templates up to 32 MB</div>
+        </div>
+        <div class="file-badge" id="fb-step1">
+          <div class="fb-icon" id="word-icon-badge"></div>
+          <div class="fb-text">
+            <div class="fb-name" id="fb-name-step1">template.docx</div>
+            <div class="fb-meta" id="fb-meta-step1">128 KB</div>
+          </div>
+          <div class="fb-pill" id="check-icon-badge"></div>
+        </div>
+        <div class="prog-wrap" id="prog-step1">
+          <div class="prog-top"><span class="prog-text">Scanning variables...</span><span class="prog-pct" id="prog-pct-step1">0%</span></div>
+          <div class="prog-track"><div class="prog-fill" id="prog-fill-step1"></div></div>
+          <div class="prog-sub">Reading OpenXML structure...</div>
+        </div>
+        <div class="row-btns">
+          <button class="btn btn-primary" style="margin-left: auto;" id="btn-scan-step1" disabled></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Excel/CSV Upload -->
+    <div class="step-panel" id="panel-step2">
+      <div class="ph">
+        <div class="ph-title">Upload Data Source</div>
+        <div class="ph-desc">Upload a spreadsheet containing column headers in the first row. We will map these columns to your document placeholders in the next step.</div>
+      </div>
+      <div class="card">
+        <div class="alert alert-error" id="alert-step2"></div>
+        <div class="drop-zone" id="dz-step2">
+          <input type="file" accept=".xlsx,.xls,.csv" id="file-input-step2"/>
+          <div class="dz-icon" id="upload-icon-step2"></div>
+          <div class="dz-title">Drop your Excel sheet or CSV here</div>
+          <div class="dz-hint">Supports <code>.xlsx</code> <code>.xls</code> <code>.csv</code> files up to 32 MB</div>
+        </div>
+        <div class="file-badge" id="fb-step2">
+          <div class="fb-icon" id="excel-icon-badge"></div>
+          <div class="fb-text">
+            <div class="fb-name" id="fb-name-step2">data.xlsx</div>
+            <div class="fb-meta" id="fb-meta-step2">45 KB</div>
+          </div>
+          <div class="fb-pill" id="check-icon-badge2"></div>
+        </div>
+        
+        <div class="preview-wrap" id="preview-wrap-step2">
+          <div class="preview-bar">
+            <span class="preview-bar-l" id="table-icon-preview"></span>
+            <span class="preview-bar-r" id="preview-stats-text">showing 5 rows</span>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="preview-table">
+              <thead id="preview-thead-step2"></thead>
+              <tbody id="preview-tbody-step2"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="row-btns">
+          <button class="btn btn-ghost" id="btn-back-step2"></button>
+          <button class="btn btn-primary" style="margin-left: auto;" id="btn-continue-step2" disabled></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Mapping -->
+    <div class="step-panel" id="panel-step3">
+      <div class="ph">
+        <div class="ph-title">Map Document Placeholders</div>
+        <div class="ph-desc">Bind your document placeholders to spreadsheet columns. Image boxes (`&lt;&lt;img:...&gt;&gt;`) should be mapped to columns containing Google Drive sharing links.</div>
+      </div>
+      <div class="card">
+        <div class="fn-row">
+          <span class="fn-label" id="file-icon-fn"></span>
+          <select class="map-select" style="flex: 1; min-width: 0;" id="select-filename-col">
+            <option value="">— Use auto-incrementing numbers (e.g. document_001.docx) —</option>
+          </select>
+        </div>
+
+        <div class="map-head">
+          <span class="map-title">Fields and Placeholders</span>
+          <span class="map-badge" id="map-badge-text">0 of 0 mapped</span>
+        </div>
+
+        <div id="mapping-rows-container"></div>
+
+        <div class="row-btns">
+          <button class="btn btn-ghost" id="btn-back-step3"></button>
+          <button class="btn btn-violet" style="margin-left: auto;" id="btn-generate-step3"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Generation Status & Downloading -->
+    <div class="step-panel" id="panel-step4">
+      <div class="ph">
+        <div class="ph-title" id="title-step4">Generating Documents...</div>
+        <div class="ph-desc" id="desc-step4">Combining data rows with placeholders and embedding media structures.</div>
+      </div>
+      <div class="card">
+        <div class="alert alert-error" id="alert-step4"></div>
+        
+        <div class="prog-wrap" id="prog-step4" style="display: block;">
+          <div class="prog-top"><span class="prog-text" id="prog-text-step4">Generating documents</span><span class="prog-pct" id="prog-pct-step4">0%</span></div>
+          <div class="prog-track"><div class="prog-fill" id="prog-fill-step4"></div></div>
+          <div class="prog-sub" id="prog-sub-step4">Initializing...</div>
+        </div>
+
+        <div id="results-container" style="display: none;">
+          
+          <!-- Failed Images Local Backup Block -->
+          <div class="alert alert-info" id="local-img-backup-block" style="display:none; flex-direction:column; gap:12px; border-left:4px solid var(--violet); background: var(--surface2); color: var(--ink); margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="warn-icon-backup"></span>
+              <strong>CORS Download Issues Detected:</strong>
+            </div>
+            <div style="font-size: 13.5px; color: var(--ink2); line-height: 1.55;">
+              Google Drive security policies blocked downloading some images directly in the browser. 
+              To bypass this CORS restriction, you can drag and drop the local image files from your computer below. 
+              We will match them automatically to their corresponding rows using the Google Drive ID or the cell contents (like name)!
+            </div>
+            
+            <div style="position:relative; background:var(--surface3); border:2px dashed var(--border2); padding:24px 16px; border-radius:var(--r2); text-align:center; cursor:pointer;" id="local-img-drop-zone">
+              <input type="file" multiple accept="image/*" id="local-img-files-picker" style="position:absolute; inset:0; opacity:0; cursor:pointer;" />
+              <strong style="color: var(--primary);">Click to select local image files</strong> (or drag & drop them here)
+            </div>
+            
+            <div id="local-img-failed-list" style="font-size:12px; color:var(--ink3); max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; background: var(--surface); padding: 12px; border-radius: var(--r3); border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace;">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+            <span class="tag tag-green" id="tag-files-count"></span>
+            <span class="tag tag-violet" id="tag-merged-ready"></span>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat-box"><div class="stat-lbl">Created</div><div class="stat-val" id="stat-val-count">0</div><div class="stat-sub">documents</div></div>
+            <div class="stat-box"><div class="stat-lbl">Mappings</div><div class="stat-val" id="stat-val-fields">0</div><div class="stat-sub">fields filled</div></div>
+            <div class="stat-box"><div class="stat-lbl">Elapsed</div><div class="stat-val" style="font-size: 20px;" id="stat-val-time">0.0s</div><div class="stat-sub">processing time</div></div>
+          </div>
+
+          <!-- Combined Document Download -->
+          <div class="dl-block" style="border-left: 4px solid var(--violet);" id="merged-block">
+            <div class="dl-head">
+              <span class="dl-title" id="merge-icon-title"></span>
+              <button class="btn btn-violet btn-sm" id="btn-dl-merged"></button>
+            </div>
+            <div class="dl-body">
+              <div class="dl-desc">A single Microsoft Word document containing all generated pages concatenated with page breaks. Ideal for fast batch printing.</div>
+            </div>
+          </div>
+
+          <!-- Individual ZIP Download -->
+          <div class="dl-block" style="border-left: 4px solid var(--green);">
+            <div class="dl-head">
+              <span class="dl-title" id="file-icon-title"></span>
+              <button class="btn btn-green btn-sm" id="btn-dl-zip" style="display: none;"></button>
+            </div>
+            <div class="dl-body">
+              <div class="result-list" id="individual-results-list"></div>
+            </div>
+          </div>
+
+          <div class="row-btns">
+            <button class="btn btn-ghost" id="btn-restart"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Universal Footer -->
+    <div class="footer">
+      <span id="footer-shield"></span>
+      <span id="footer-file"></span>
+      <span id="footer-image"></span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ── SVG Icons Store ────────────────────────────────── */
+const SVGS = {
+  logo: '<svg width="20" height="20" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="10" height="13" rx="2" fill="white" opacity=".9"/><rect x="4" y="5" width="6" height="1.2" rx=".6" fill="#6366f1"/><rect x="4" y="7.5" width="6" height="1.2" rx=".6" fill="#6366f1"/><rect x="4" y="10" width="4" height="1.2" rx=".6" fill="#6366f1"/><circle cx="13" cy="13" r="4" fill="white" opacity=".95"/><path d="M11.5 13l1 1 2.5-2.5" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  word: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2.5" fill="#185abd" opacity=".1"/><rect x="2" y="2" width="14" height="14" rx="2.5" stroke="#1976d2" stroke-width="1.1"/><path d="M5 6l1.8 6L9 8.5 11.2 12 13 6" stroke="#1976d2" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  excel: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2.5" fill="#1d6f42" opacity=".1"/><rect x="2" y="2" width="14" height="14" rx="2.5" stroke="#217346" stroke-width="1.1"/><path d="M5.5 6.5L12.5 11.5M12.5 6.5L5.5 11.5" stroke="#217346" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  upload: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 15V4M8 8l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  check: '<svg width="14" height="14" viewBox="0 0 13 13" fill="none"><path d="M2 6.5l3 3 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  right: '<svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M2.5 7h9M8 3.5L11.5 7 8 10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  left: '<svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M11.5 7h-9M6 10.5L2.5 7 6 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  bolt: '<svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M7.5 1.5L3 7.5h4.5l-1 5 5.5-7H7.5l1-4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  dl: '<svg width="14" height="14" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v6M4.5 6L6.5 8l2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M2 10.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  zip: '<svg width="14" height="14" viewBox="0 0 13 13" fill="none"><path d="M2.5 2h5L11 5.5V11a1 1 0 01-1 1H3.5a1 1 0 01-1-1V2z" stroke="currentColor" stroke-width="1.2"/><path d="M7.5 2v4H11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M5 7h3M5 8.5h3M5 10h3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>',
+  merge: '<svg width="14" height="14" viewBox="0 0 13 13" fill="none"><rect x="1" y="2" width="4" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="8" y="6" width="4" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M5 4.5h2a1 1 0 011 1v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+  reset: '<svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M11.5 7A4.5 4.5 0 112.5 5M2.5 2v3h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  warn: '<svg width="16" height="16" viewBox="0 0 15 15" fill="none"><path d="M7.5 2L1 13h13L7.5 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 6v3.5M7.5 11v.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  table: '<svg width="14" height="14" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 4.5h10M4.5 4.5v6.5" stroke="currentColor" stroke-width="1.2"/></svg>',
+  shield: '<svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M6 1L2 2.5v3C2 8.5 4 11 6 11.5 8 11 10 8.5 10 5.5v-3L6 1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>',
+  file: '<svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M2 2h5.5L10 4.5V10.5a.5.5 0 01-.5.5h-7a.5.5 0 01-.5-.5V2.5A.5.5 0 012 2z" stroke="currentColor" stroke-width="1.2"/><path d="M7.5 2v3H10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+  image: '<svg width="14" height="14" viewBox="0 0 13 13" fill="none"><rect x="1.5" y="1.5" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="4.5" cy="4.5" r="1.2" fill="currentColor"/><path d="M2 10.5l3-3 2.5 2.5 3.5-4 1.5 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+
+/* ── UI Elements Setup (Static Icons Injection) ──────── */
+document.getElementById('logo-container').innerHTML = SVGS.logo;
+document.getElementById('upload-icon-step1').innerHTML = SVGS.upload;
+document.getElementById('word-icon-badge').innerHTML = SVGS.word;
+document.getElementById('check-icon-badge').innerHTML = SVGS.check + '&nbsp;Ready';
+document.getElementById('btn-scan-step1').innerHTML = SVGS.right + 'Scan Variables';
+
+document.getElementById('upload-icon-step2').innerHTML = SVGS.upload;
+document.getElementById('excel-icon-badge').innerHTML = SVGS.excel;
+document.getElementById('check-icon-badge2').innerHTML = SVGS.check + '&nbsp;Parsed';
+document.getElementById('table-icon-preview').innerHTML = SVGS.table;
+document.getElementById('btn-back-step2').innerHTML = SVGS.left + 'Back';
+document.getElementById('btn-continue-step2').innerHTML = SVGS.right + 'Continue';
+
+document.getElementById('file-icon-fn').innerHTML = SVGS.file;
+document.getElementById('btn-back-step3').innerHTML = SVGS.left + 'Back';
+document.getElementById('btn-generate-step3').innerHTML = SVGS.bolt + 'Generate Studio Docs';
+
+document.getElementById('warn-icon-backup').innerHTML = SVGS.warn;
+document.getElementById('merge-icon-title').innerHTML = SVGS.merge + '&nbsp;Combined Output Document';
+document.getElementById('btn-dl-merged').innerHTML = SVGS.dl + '&nbsp;Download Combined';
+document.getElementById('file-icon-title').innerHTML = SVGS.file + '&nbsp;Individual Documents';
+document.getElementById('btn-dl-zip').innerHTML = SVGS.zip + '&nbsp;Download ZIP Bundle';
+document.getElementById('btn-restart').innerHTML = SVGS.reset + 'Start Over';
+
+document.getElementById('footer-shield').innerHTML = SVGS.shield + 'Private & Secure (No server uploads)';
+document.getElementById('footer-file').innerHTML = SVGS.file + '.docx Templates & Spreadsheet Data';
+document.getElementById('footer-image').innerHTML = SVGS.image + 'Supports Google Drive Image URLs';
+
+/* ── Global States ──────────────────────────────────── */
+let currentStep = 1;
+let templateFile = null;
+let templateBytes = null;
+let templateVariables = [];
+let dataFile = null;
+let dataHeaders = [];
+let dataRows = [];
+let fileMapping = {};
+let filenameCol = "";
+
+let generatedBlobs = []; // [{name, blob}]
+let mergedBlobFile = null;
+let generatorCancelled = false;
+
+// New persistent cache & failed download states
+let globalImgCache = {}; 
+let failedImageUrls = [];
+
+/* ── DOM Helper Functions ────────────────────────────── */
+function showStep(stepNum) {
+  currentStep = stepNum;
+  document.getElementById('step-counter').innerText = `Step ${stepNum} of 4`;
+  
+  // Render Stepper Circles
+  const steps = ['Template', 'Data', 'Map', 'Generate'];
+  let stepperHtml = '';
+  steps.forEach((label, i) => {
+    const n = i + 1;
+    const isActive = n === stepNum;
+    const isDone = n < stepNum;
+    const stepClass = `step-item${isActive ? ' active' : ''}${isDone ? ' done' : ''}`;
+    const circleContent = isDone ? SVGS.check : n;
+    
+    stepperHtml += `
+      <div class="${stepClass}">
+        <div class="step-circle">${circleContent}</div>
+        <div class="step-label">${label}</div>
+      </div>
+    `;
+    if (i < steps.length - 1) {
+      stepperHtml += `<div class="step-line${isDone ? ' done' : ''}"></div>`;
+    }
+  });
+  document.getElementById('stepper-bar').innerHTML = stepperHtml;
+
+  // Toggle active panel
+  document.querySelectorAll('.step-panel').forEach((el, i) => {
+    if (i + 1 === stepNum) el.classList.add('active');
+    else el.classList.remove('active');
+  });
+}
+
+function showAlert(stepNum, message) {
+  const alertEl = document.getElementById(`alert-step${stepNum}`);
+  if (alertEl) {
+    if (message) {
+      alertEl.innerHTML = SVGS.warn + `<span>${message}</span>`;
+      alertEl.style.display = 'flex';
+    } else {
+      alertEl.style.display = 'none';
+    }
+  }
+}
+
+/* ── DOCX Helper Logics ──────────────────────────────── */
+function escXml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');}
+
+function replaceVars(xml, data){
+  let r = xml;
+  for(const [k, v] of Object.entries(data)){
+    const e = escXml(v);
+    const kk = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    r = r.replace(new RegExp(`&lt;&lt;${kk}&gt;&gt;`, 'g'), e).replace(new RegExp(`<<${kk}>>`, 'g'), e);
+  }
+  return r;
+}
+
+function mergeRuns(xml){
+  return xml.replace(/<w:p[ >][\s\S]*?<\/w:p>/g, para=>{
+    if(!para.includes('&lt;&lt;') && !para.includes('<<')) return para;
+    const runs = [];
+    const re = /<w:r(?:\s[^>]*)?>[\s\S]*?<\/w:r>/g;
+    let m;
+    while((m = re.exec(para)) !== null){
+      const t = m[0].match(/<w:t(?:[^>]*)>([\s\S]*?)<\/w:t>/);
+      runs.push({full: m[0], text: t ? t[1] : ''});
+    }
+    if(!runs.length) return para;
+    const joined = runs.map(r => r.text).join('');
+    if(!joined.includes('<<')) return para;
+    let res = para.replace(runs[0].full, runs[0].full.replace(/<w:t(?:[^>]*)>[\s\S]*?<\/w:t>/, `<w:t xml:space="preserve">${joined}</w:t>`));
+    for(let i = 1; i < runs.length; i++){
+      res = res.replace(runs[i].full, runs[i].full.replace(/<w:t(?:[^>]*)>[\s\S]*?<\/w:t>/, '<w:t></w:t>'));
+    }
+    return res;
+  });
+}
+
+function extractVars(xml){
+  const s = new Set();
+  const dec = xml.replace(/&lt;&lt;/g, '<<').replace(/&gt;&gt;/g, '>>');
+  let m;
+  const re = /<<([^<>]+)>>/g;
+  while((m = re.exec(dec)) !== null) s.add(m[1].trim());
+  return [...s].sort();
+}
+
+function extractBody(xml){
+  const bm = xml.match(/<w:body>([\s\S]*?)<\/w:body>/);
+  if(!bm) return {content: '', sectPr: ''};
+  const bi = bm[1];
+  const sm = bi.match(/<w:sectPr[\s\S]*?<\/w:sectPr>\s*$/);
+  const sp = sm ? sm[0] : '';
+  return {content: sp ? bi.slice(0, bi.lastIndexOf(sp)) : bi, sectPr: sp};
+}
+
+const PB = `<w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
+
+/* ── Google Drive & CORS proxy image fetchers ────────── */
+function extractFileId(url) {
+  if (!url) return '';
+  url = url.trim();
+  const dMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  const shortMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return (dMatch && dMatch[1]) || (idMatch && idMatch[1]) || (shortMatch && shortMatch[1]) || '';
+}
+
+function getDriveDirectLink(url) {
+  const fileId = extractFileId(url);
+  if (fileId) {
+    return `https://docs.google.com/uc?export=download&id=${fileId}`;
+  }
+  return url;
+}
+
+async function fetchImageBytes(url) {
+  let directUrl = getDriveDirectLink(url);
+  const fileId = extractFileId(url);
+  
+  const urlsToTry = [directUrl];
+  if (fileId) {
+    urlsToTry.push(`https://lh3.googleusercontent.com/d/${fileId}`);
+    urlsToTry.push(`https://docs.google.com/uc?export=download&id=${fileId}`);
+  }
+  
+  for (const tUrl of urlsToTry) {
+    // Try Direct
+    try {
+      const res = await fetch(tUrl);
+      if (res.ok) return await res.arrayBuffer();
+    } catch (e) {}
+    
+    // Try CORS Proxy 1: corsproxy.io
+    try {
+      const proxyUrl = `https://corsproxy.io/?` + encodeURIComponent(tUrl);
+      const res = await fetch(proxyUrl);
+      if (res.ok) return await res.arrayBuffer();
+    } catch (e) {}
+    
+    // Try CORS Proxy 2: CodeTabs (Fast & Free CORS proxy)
+    try {
+      const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=` + encodeURIComponent(tUrl);
+      const res = await fetch(proxyUrl);
+      if (res.ok) return await res.arrayBuffer();
+    } catch (e) {}
+    
+    // Try CORS Proxy 3: AllOrigins JSON GET (bypasses raw binary blocks via base64 wrappers)
+    try {
+      const proxyUrl = `https://api.allorigins.win/get?url=` + encodeURIComponent(tUrl);
+      const res = await fetch(proxyUrl);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.contents) {
+          const base64Match = json.contents.match(/^data:([^;]+);base64,(.*)$/);
+          if (base64Match) {
+            const base64Str = base64Match[2];
+            const binaryStr = atob(base64Str);
+            const len = binaryStr.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+              bytes[i] = binaryStr.charCodeAt(i);
+            }
+            return bytes.buffer;
+          } else {
+            try {
+              const binaryStr = atob(json.contents);
+              const len = binaryStr.length;
+              const bytes = new Uint8Array(len);
+              for (let i = 0; i < len; i++) {
+                bytes[i] = binaryStr.charCodeAt(i);
+              }
+              return bytes.buffer;
+            } catch(e) {}
+          }
+        }
+      }
+    } catch (e) {}
+  }
+  
+  throw new Error(`Failed to fetch image`);
+}
+
+function getImageInfo(arrayBuffer) {
+  const arr = new Uint8Array(arrayBuffer.slice(0, 8));
+  if (arr[0] === 0x89 && arr[1] === 0x50 && arr[2] === 0x4E && arr[3] === 0x47) {
+    return { ext: 'png', mime: 'image/png' };
+  }
+  if (arr[0] === 0xFF && arr[1] === 0xD8 && arr[2] === 0xFF) {
+    return { ext: 'jpeg', mime: 'image/jpeg' };
+  }
+  if (arr[0] === 0x47 && arr[1] === 0x49 && arr[2] === 0x46) {
+    return { ext: 'gif', mime: 'image/gif' };
+  }
+  return { ext: 'png', mime: 'image/png' };
+}
+
+/* ── OpenXML XML relationship manipulators ───────────── */
+function getNextRelId(relsXml) {
+  const re = /Id="rId(\d+)"/g;
+  let max = 0;
+  let m;
+  while ((m = re.exec(relsXml)) !== null) {
+    const id = parseInt(m[1]);
+    if (id > max) max = id;
+  }
+  return max + 1;
+}
+
+function addRelationship(relsXml, id, type, target) {
+  const tag = `<Relationship Id="${id}" Type="${type}" Target="${target}"/>`;
+  return relsXml.replace('</Relationships>', `${tag}</Relationships>`);
+}
+
+function parseDimension(val, defaultValInMm) {
+  if (!val) return defaultValInMm * 36000;
+  val = val.toLowerCase().trim();
+  let num = parseFloat(val);
+  if (isNaN(num)) return defaultValInMm * 36000;
+  
+  if (val.endsWith('in')) {
+    return Math.round(num * 914400);
+  } else if (val.endsWith('px')) {
+    return Math.round(num * 9525);
+  } else if (val.endsWith('cm')) {
+    return Math.round(num * 360000);
+  } else {
+    return Math.round(num * 36000);
+  }
+}
+
+function parseDimPair(dimStr) {
+  if (!dimStr) return { cx: 1800000, cy: 1800000 };
+  const parts = dimStr.split(/x|:/);
+  const w = parts[0] ? parts[0].trim() : '';
+  const h = parts[1] ? parts[1].trim() : '';
+  return {
+    cx: parseDimension(w, 50),
+    cy: parseDimension(h, 50)
+  };
+}
+
+function isImageVar(v) {
+  return v.toLowerCase().startsWith('img:') || v.toLowerCase().startsWith('image:');
+}
+
+function getCleanVarName(v) {
+  if (isImageVar(v)) {
+    const parts = v.split(':');
+    return parts[1] ? parts[1].trim() : v;
+  }
+  return v;
+}
+
+function getVarDimensions(v) {
+  if (isImageVar(v)) {
+    const parts = v.split(':');
+    if (parts[2]) {
+      return parts[2].trim();
+    }
+  }
+  return null;
+}
+
+function createImageDrawingXml(rId, cx, cy, name = 'Image') {
+  return `<w:drawing>
+    <wp:inline distT="0" distB="0" distL="0" distR="0">
+      <wp:extent cx="${cx}" cy="${cy}"/>
+      <wp:docPr id="${Math.floor(Math.random() * 10000)}" name="${name}"/>
+      <wp:cNvGraphicFramePr>
+        <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+      </wp:cNvGraphicFramePr>
+      <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+        <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+          <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+            <pic:nvPicPr>
+              <pic:cNvPr id="${Math.floor(Math.random() * 10000)}" name="${name}"/>
+              <pic:cNvPicPr/>
+            </pic:nvPicPr>
+            <pic:blipFill>
+              <a:blip r:embed="${rId}"/>
+              <a:stretch><a:fillRect/></a:stretch>
+            </pic:blipFill>
+            <pic:spPr>
+              <a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>
+              <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+            </pic:spPr>
+          </pic:pic>
+        </a:graphicData>
+      </a:graphic>
+    </wp:inline>
+  </w:drawing>`;
+}
+
+function processImagesInXml(xml, rowData, imgCache, relsXml, addFileToZipCallback) {
+  let updatedXml = xml;
+  let updatedRelsXml = relsXml;
+  let relIdCounter = getNextRelId(relsXml);
+  const localRelsMap = {};
+
+  const re = /(?:&lt;&lt;|<<)(img|image):([^:>]+)(?::([^>]+))?(?:&gt;&gt;|>>)/gi;
+  
+  updatedXml = updatedXml.replace(re, (match, prefix, varName, dimStr) => {
+    varName = varName.trim();
+    const url = rowData[varName] || rowData[`img:${varName}`] || rowData[`image:${varName}`];
+    if (!url) return '';
+    
+    if (localRelsMap[url]) {
+      const relId = localRelsMap[url];
+      const { cx, cy } = parseDimPair(dimStr);
+      return createImageDrawingXml(relId, cx, cy, varName);
+    }
+    
+    const imgData = imgCache[url];
+    if (!imgData) {
+      return `[Image Load Error: ${escXml(varName)}]`;
+    }
+    
+    const imgId = relIdCounter++;
+    const filename = `image_${imgId}.${imgData.ext}`;
+    const zipPath = `word/media/${filename}`;
+    
+    addFileToZipCallback(zipPath, new Uint8Array(imgData.arrayBuffer));
+    
+    const relId = `rId${imgId}`;
+    updatedRelsXml = addRelationship(updatedRelsXml, relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image', `media/${filename}`);
+    localRelsMap[url] = relId;
+    
+    const { cx, cy } = parseDimPair(dimStr);
+    return createImageDrawingXml(relId, cx, cy, varName);
+  });
+  
+  return { xml: updatedXml, relsXml: updatedRelsXml };
+}
+
+async function genDocx(tb, data, imgCache) {
+  const zip = await JSZip.loadAsync(tb);
+  const nz = new JSZip();
+  
+  const files = {};
+  const ps = [];
+  
+  zip.forEach((p, f) => {
+    if (p.endsWith('.xml') || p.endsWith('.rels') || p.includes('[Content_Types]')) {
+      ps.push(f.async('string').then(x => { files[p] = x; }));
+    } else {
+      ps.push(f.async('uint8array').then(b => { files[p] = b; }));
+    }
+  });
+  
+  await Promise.all(ps);
+  
+  let contentTypesXml = files['[Content_Types].xml'] || '';
+  if (contentTypesXml) {
+    let newTypes = '';
+    if (!contentTypesXml.includes('Extension="png"') && !contentTypesXml.includes('extension="png"')) {
+      newTypes += '<Default Extension="png" ContentType="image/png"/>';
+    }
+    if (!contentTypesXml.includes('Extension="jpeg"') && !contentTypesXml.includes('extension="jpeg"')) {
+      newTypes += '<Default Extension="jpeg" ContentType="image/jpeg"/>';
+    }
+    if (!contentTypesXml.includes('Extension="jpg"') && !contentTypesXml.includes('extension="jpg"')) {
+      newTypes += '<Default Extension="jpg" ContentType="image/jpeg"/>';
+    }
+    if (!contentTypesXml.includes('Extension="gif"') && !contentTypesXml.includes('extension="gif"')) {
+      newTypes += '<Default Extension="gif" ContentType="image/gif"/>';
+    }
+    if (newTypes) {
+      contentTypesXml = contentTypesXml.replace(/<\/Types>/i, `${newTypes}</Types>`);
+    }
+    files['[Content_Types].xml'] = contentTypesXml;
+  }
+  
+  const docFiles = Object.keys(files).filter(p => p.match(/^word\/(document|header\d+|footer\d+)\.xml$/));
+  
+  for (const docFile of docFiles) {
+    let xmlContent = files[docFile];
+    if (xmlContent.includes('img:') || xmlContent.includes('image:') || xmlContent.includes('&lt;&lt;img:') || xmlContent.includes('&lt;&lt;image:')) {
+      const parts = docFile.split('/');
+      const filename = parts.pop();
+      const parentDir = parts.join('/');
+      const relsFile = `${parentDir}/_rels/${filename}.rels`;
+      
+      let relsXml = files[relsFile];
+      if (!relsXml) {
+        relsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`;
+      }
+      
+      xmlContent = mergeRuns(xmlContent);
+      const result = processImagesInXml(xmlContent, data, imgCache, relsXml, (path, dataBytes) => {
+        files[path] = dataBytes;
+      });
+      
+      files[docFile] = result.xml;
+      files[relsFile] = result.relsXml;
+    }
+  }
+  
+  for (const [p, content] of Object.entries(files)) {
+    if (typeof content === 'string') {
+      if (p.endsWith('.xml') && !p.includes('[Content_Types]') && !p.includes('_rels/')) {
+        files[p] = replaceVars(mergeRuns(content), data);
+      }
+    }
+  }
+  
+  for (const [p, content] of Object.entries(files)) {
+    nz.file(p, content);
+  }
+  
+  return nz.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+async function genMerged(tb, allData, imgCache) {
+  const zip = await JSZip.loadAsync(tb);
+  const nz = new JSZip();
+  let doc = null;
+  const files = {};
+  const ps = [];
+  
+  zip.forEach((p, f) => {
+    if (p === 'word/document.xml') {
+      doc = f;
+      return;
+    }
+    ps.push((p.endsWith('.xml') || p.endsWith('.rels') || p.includes('[Content_Types]')) ? f.async('string').then(x => { files[p] = x; }) : f.async('uint8array').then(b => { files[p] = b; }));
+  });
+  
+  await Promise.all(ps);
+  
+  let contentTypesXml = files['[Content_Types].xml'] || '';
+  if (contentTypesXml) {
+    let newTypes = '';
+    if (!contentTypesXml.includes('Extension="png"') && !contentTypesXml.includes('extension="png"')) {
+      newTypes += '<Default Extension="png" ContentType="image/png"/>';
+    }
+    if (!contentTypesXml.includes('Extension="jpeg"') && !contentTypesXml.includes('extension="jpeg"')) {
+      newTypes += '<Default Extension="jpeg" ContentType="image/jpeg"/>';
+    }
+    if (!contentTypesXml.includes('Extension="jpg"') && !contentTypesXml.includes('extension="jpg"')) {
+      newTypes += '<Default Extension="jpg" ContentType="image/jpeg"/>';
+    }
+    if (!contentTypesXml.includes('Extension="gif"') && !contentTypesXml.includes('extension="gif"')) {
+      newTypes += '<Default Extension="gif" ContentType="image/gif"/>';
+    }
+    if (newTypes) {
+      contentTypesXml = contentTypesXml.replace(/<\/Types>/i, `${newTypes}</Types>`);
+    }
+    files['[Content_Types].xml'] = contentTypesXml;
+  }
+  
+  const tx = await doc.async('string');
+  const bb = tx.slice(0, tx.indexOf('<w:body>') + '<w:body>'.length);
+  const ab = tx.slice(tx.lastIndexOf('</w:body>'));
+  const { content, sectPr } = extractBody(tx);
+  const mt = mergeRuns(content);
+  
+  let relsXml = files['word/_rels/document.xml.rels'];
+  if (!relsXml) {
+    relsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`;
+  }
+  
+  const pages = [];
+  for (let i = 0; i < allData.length; i++) {
+    const row = allData[i];
+    let pageXml = replaceVars(mt, row);
+    
+    const result = processImagesInXml(pageXml, row, imgCache, relsXml, (path, dataBytes) => {
+      files[path] = dataBytes;
+    });
+    
+    pageXml = result.xml;
+    relsXml = result.relsXml;
+    
+    pages.push(pageXml + (i < allData.length - 1 ? PB : ''));
+  }
+  
+  files['word/document.xml'] = bb + pages.join('') + sectPr + '</w:body>' + ab.slice('</w:body>'.length);
+  files['word/_rels/document.xml.rels'] = relsXml;
+  
+  for (const [p, content] of Object.entries(files)) {
+    nz.file(p, content);
+  }
+  
+  return nz.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+function dlBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ── STEP 1: Upload Template Handler ────────────────── */
+const fileInputStep1 = document.getElementById('file-input-step1');
+const dzStep1 = document.getElementById('dz-step1');
+const fbStep1 = document.getElementById('fb-step1');
+const btnScanStep1 = document.getElementById('btn-scan-step1');
+const progStep1 = document.getElementById('prog-step1');
+const progFillStep1 = document.getElementById('prog-fill-step1');
+const progPctStep1 = document.getElementById('prog-pct-step1');
+
+fileInputStep1.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) handleTemplateFile(file);
+});
+
+dzStep1.addEventListener('dragover', e => {
+  e.preventDefault();
+  dzStep1.classList.add('drag');
+});
+dzStep1.addEventListener('dragleave', () => {
+  dzStep1.classList.remove('drag');
+});
+dzStep1.addEventListener('drop', e => {
+  e.preventDefault();
+  dzStep1.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) handleTemplateFile(file);
+});
+
+function handleTemplateFile(file) {
+  if (!file.name.toLowerCase().endsWith('.docx')) {
+    showAlert(1, "Please upload a valid Word Document (.docx) template file.");
+    return;
+  }
+  showAlert(1, null);
+  templateFile = file;
+  
+  // Show file badge
+  document.getElementById('fb-name-step1').innerText = file.name;
+  document.getElementById('fb-meta-step1').innerText = fmtSz(file.size);
+  fbStep1.style.display = 'flex';
+  dzStep1.style.display = 'none';
+  btnScanStep1.removeAttribute('disabled');
+}
+
+btnScanStep1.addEventListener('click', async () => {
+  if (!templateFile) return;
+  showAlert(1, null);
+  btnScanStep1.setAttribute('disabled', 'true');
+  progStep1.style.display = 'block';
+  
+  progFillStep1.style.width = '30%';
+  progPctStep1.innerText = '30%';
+  
+  try {
+    const buf = await templateFile.arrayBuffer();
+    templateBytes = buf;
+    
+    progFillStep1.style.width = '65%';
+    progPctStep1.innerText = '65%';
+    
+    const zip = await JSZip.loadAsync(buf);
+    
+    progFillStep1.style.width = '85%';
+    progPctStep1.innerText = '85%';
+    
+    let xml = '';
+    const docFiles = ['word/document.xml', 'word/header1.xml', 'word/header2.xml', 'word/footer1.xml', 'word/footer2.xml'];
+    for(const t of docFiles){
+      const e = zip.file(t);
+      if(e) xml += await e.async('string');
+    }
+    
+    templateVariables = extractVars(xml);
+    
+    progFillStep1.style.width = '100%';
+    progPctStep1.innerText = '100%';
+    
+    setTimeout(() => {
+      progStep1.style.display = 'none';
+      progFillStep1.style.width = '0%';
+      showStep(2);
+    }, 250);
+  } catch(e) {
+    btnScanStep1.removeAttribute('disabled');
+    progStep1.style.display = 'none';
+    showAlert(1, "Failed to scan template variables: " + e.message);
+  }
+});
+
+/* ── STEP 2: Upload Data Source Handler ─────────────── */
+const fileInputStep2 = document.getElementById('file-input-step2');
+const dzStep2 = document.getElementById('dz-step2');
+const fbStep2 = document.getElementById('fb-step2');
+const btnBackStep2 = document.getElementById('btn-back-step2');
+const btnContinueStep2 = document.getElementById('btn-continue-step2');
+const previewWrapStep2 = document.getElementById('preview-wrap-step2');
+
+fileInputStep2.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) handleDataFile(file);
+});
+
+dzStep2.addEventListener('dragover', e => {
+  e.preventDefault();
+  dzStep2.classList.add('drag');
+});
+dzStep2.addEventListener('dragleave', () => {
+  dzStep2.classList.remove('drag');
+});
+dzStep2.addEventListener('drop', e => {
+  e.preventDefault();
+  dzStep2.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) handleDataFile(file);
+});
+
+btnBackStep2.addEventListener('click', () => {
+  showStep(1);
+});
+
+btnContinueStep2.addEventListener('click', () => {
+  if (dataHeaders.length > 0) {
+    setupMappingScreen();
+    showStep(3);
+  }
+});
+
+async function handleDataFile(file) {
+  if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
+    showAlert(2, "Please upload a valid Excel spreadsheet or CSV file (.xlsx, .xls, .csv).");
+    return;
+  }
+  showAlert(2, null);
+  dataFile = file;
+  
+  // Reset preview states
+  previewWrapStep2.style.display = 'none';
+  btnContinueStep2.setAttribute('disabled', 'true');
+  
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, {type: 'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ''});
+    
+    if (rows.length < 2) {
+      showAlert(2, "Data source must contain a header row (row 1) and at least 1 data row.");
+      return;
+    }
+    
+    dataHeaders = rows[0].map(h => String(h).trim());
+    dataRows = rows.slice(1).filter(r => r.some(c => c !== '' && c != null));
+    
+    // Update Badge UI
+    document.getElementById('fb-name-step2').innerText = file.name;
+    document.getElementById('fb-meta-step2').innerText = `${fmtSz(file.size)} · ${dataHeaders.length} columns · ${dataRows.length} rows`;
+    fbStep2.style.display = 'flex';
+    dzStep2.style.display = 'none';
+    
+    // Render Preview Table
+    const thead = document.getElementById('preview-thead-step2');
+    const tbody = document.getElementById('preview-tbody-step2');
+    
+    thead.innerHTML = `<tr>${dataHeaders.map(h => `<th>${escXml(h || '—')}</th>`).join('')}</tr>`;
+    
+    const previewRows = dataRows.slice(0, 5);
+    let tbodyHtml = '';
+    previewRows.forEach(row => {
+      tbodyHtml += '<tr>';
+      dataHeaders.forEach((_, ci) => {
+        const cellValue = row[ci] !== undefined ? String(row[ci]) : '';
+        tbodyHtml += `<td title="${escXml(cellValue)}">${escXml(cellValue || '—')}</td>`;
+      });
+      tbodyHtml += '</tr>';
+    });
+    tbody.innerHTML = tbodyHtml;
+    
+    document.getElementById('preview-stats-text').innerText = `showing ${Math.min(5, dataRows.length)} of ${dataRows.length} rows`;
+    previewWrapStep2.style.display = 'block';
+    btnContinueStep2.removeAttribute('disabled');
+  } catch(e) {
+    showAlert(2, "Could not parse spreadsheet data: " + e.message);
+  }
+}
+
+/* ── STEP 3: Mapping Screen ─────────────────────────── */
+const btnBackStep3 = document.getElementById('btn-back-step3');
+const btnGenerateStep3 = document.getElementById('btn-generate-step3');
+const mappingRowsContainer = document.getElementById('mapping-rows-container');
+const selectFilenameCol = document.getElementById('select-filename-col');
+
+btnBackStep3.addEventListener('click', () => {
+  showStep(2);
+});
+
+btnGenerateStep3.addEventListener('click', () => {
+  // Capture final mappings
+  fileMapping = {};
+  templateVariables.forEach(v => {
+    const select = document.getElementById(`map-select-${v}`);
+    fileMapping[v] = select ? select.value : '';
+  });
+  filenameCol = selectFilenameCol.value;
+  
+  showStep(4);
+  startGenerator();
+});
+
+function setupMappingScreen() {
+  // Setup filename select options
+  let filenameSelectHtml = '<option value="">— Use auto-incrementing numbers (e.g. document_001.docx) —</option>';
+  dataHeaders.forEach(h => {
+    filenameSelectHtml += `<option value="${escXml(h)}">${escXml(h)}</option>`;
+  });
+  selectFilenameCol.innerHTML = filenameSelectHtml;
+  
+  // Render mapping rows
+  let mappingHtml = '';
+  
+  if (templateVariables.length === 0) {
+    mappingHtml = `
+      <div class="alert alert-info" style="display: flex;">
+        ${SVGS.warn}<span>No placeholders detected in your template. Ensure placeholders are defined inside &lt;&lt;VariableName&gt;&gt; tags in your Word Document.</span>
+      </div>
+    `;
+  } else {
+    templateVariables.forEach(v => {
+      const isImg = isImageVar(v);
+      const cleanName = getCleanVarName(v);
+      const dim = getVarDimensions(v);
+      
+      // Auto-match Logic
+      const cleanV = cleanName.toLowerCase();
+      const matchedHeader = dataHeaders.find(h => {
+        const cleanH = h.toLowerCase();
+        return cleanH === cleanV || cleanH === v.toLowerCase() || cleanH.includes(cleanV);
+      }) || '';
+      
+      const selectId = `map-select-${v}`;
+      
+      let varInner = '';
+      let varStyle = '';
+      
+      if (isImg) {
+        varStyle = 'style="background: var(--primary-l); border: 1px solid rgba(99, 102, 241, 0.4); color: var(--ink);"';
+        varInner = `
+          <span style="display: inline-flex; align-items: center; gap: 6px;">
+            <span style="color: var(--primary);">${SVGS.image}</span>
+            <strong>${escXml(cleanName)}</strong>
+            <span style="font-size: 10px; background: var(--surface3); padding: 1px 5px; border-radius: 4px; color: var(--ink3);">${escXml(dim ? dim : '50x50mm')}</span>
+          </span>
+        `;
+      } else {
+        varInner = `<span>&lt;&lt;${escXml(cleanName)}&gt;&gt;</span>`;
+      }
+      
+      mappingHtml += `
+        <div class="map-row">
+          <div class="map-var" title="&lt;&lt;${escXml(v)}&gt;&gt;" ${varStyle}>
+            ${varInner}
+          </div>
+          <div class="map-arrow">${SVGS.right}</div>
+          <div>
+            <select class="map-select ${matchedHeader ? 'matched' : ''}" id="${selectId}" onchange="onMappingSelectChange(this)">
+              <option value="">— skip variable —</option>
+              ${dataHeaders.map(h => `<option value="${escXml(h)}" ${h === matchedHeader ? 'selected' : ''}>${escXml(h)}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      `;
+    });
+  }
+  
+  mappingRowsContainer.innerHTML = mappingHtml;
+  updateMappingCount();
+}
+
+function onMappingSelectChange(selectEl) {
+  if (selectEl.value) {
+    selectEl.classList.add('matched');
+  } else {
+    selectEl.classList.remove('matched');
+  }
+  updateMappingCount();
+}
+
+function updateMappingCount() {
+  let mappedCount = 0;
+  templateVariables.forEach(v => {
+    const select = document.getElementById(`map-select-${v}`);
+    if (select && select.value) mappedCount++;
+  });
+  document.getElementById('map-badge-text').innerText = `${mappedCount} of ${templateVariables.length} mapped`;
+}
+
+/* ── STEP 4: Generator & ZIP Operations ──────────────── */
+const progFillStep4 = document.getElementById('prog-fill-step4');
+const progPctStep4 = document.getElementById('prog-pct-step4');
+const progTextStep4 = document.getElementById('prog-text-step4');
+const progSubStep4 = document.getElementById('prog-sub-step4');
+
+const resultsContainer = document.getElementById('results-container');
+const progWrapStep4 = document.getElementById('prog-step4');
+
+const btnDlMerged = document.getElementById('btn-dl-merged');
+const btnDlZip = document.getElementById('btn-dl-zip');
+const btnRestart = document.getElementById('btn-restart');
+
+btnRestart.addEventListener('click', () => {
+  restartApp();
+});
+
+btnDlMerged.addEventListener('click', () => {
+  if (mergedBlobFile) {
+    dlBlob(mergedBlobFile, 'combined_merged_documents.docx');
+  }
+});
+
+btnDlZip.addEventListener('click', async () => {
+  if (generatedBlobs.length === 0) return;
+  if (generatedBlobs.length === 1) {
+    dlBlob(generatedBlobs[0].blob, generatedBlobs[0].name);
+    return;
+  }
+  
+  const zip = new JSZip();
+  generatedBlobs.forEach(b => {
+    zip.file(b.name, b.blob);
+  });
+  
+  const zipBlob = await zip.generateAsync({type: 'blob'});
+  dlBlob(zipBlob, 'generated_documents.zip');
+});
+
+async function startGenerator() {
+  showAlert(4, null);
+  progWrapStep4.style.display = 'block';
+  resultsContainer.style.display = 'none';
+  
+  generatedBlobs = [];
+  mergedBlobFile = null;
+  generatorCancelled = false;
+  
+  const startTime = Date.now();
+  
+  // Format rows as objects map
+  const mappedRows = dataRows.map(row => {
+    const o = {};
+    dataHeaders.forEach((h, i) => {
+      o[h] = row[i] !== undefined ? row[i] : '';
+    });
+    return o;
+  });
+  
+  const total = mappedRows.length;
+  
+  // Phase 1: Collect unique image URLs and download them
+  const imgVars = Object.keys(fileMapping).filter(isImageVar);
+  const uniqueUrls = new Set();
+  
+  mappedRows.forEach(row => {
+    imgVars.forEach(v => {
+      const col = fileMapping[v];
+      if (col) {
+        const url = String(row[col] ?? '').trim();
+        if (url) uniqueUrls.add(url);
+      }
+    });
+  });
+  
+  const urlArray = Array.from(uniqueUrls);
+  
+  if (urlArray.length > 0) {
+    progFillStep4.style.width = '5%';
+    progPctStep4.innerText = '5%';
+    progTextStep4.innerText = 'Downloading template images';
+    progSubStep4.innerText = `Connecting to download proxy to fetch ${urlArray.length} unique images...`;
+    
+    for (let i = 0; i < urlArray.length; i++) {
+      if (generatorCancelled) return;
+      const url = urlArray[i];
+      const percent = Math.round(5 + (i / urlArray.length) * 45); // 5% to 50%
+      
+      progFillStep4.style.width = `${percent}%`;
+      progPctStep4.innerText = `${percent}%`;
+      progSubStep4.innerText = `Downloading image ${i + 1} of ${urlArray.length}...`;
+      
+      // Skip download if it's already in the global cache (either from previous download or local upload!)
+      if (globalImgCache[url]) continue;
+      
+      try {
+        const arrayBuffer = await fetchImageBytes(url);
+        const { ext, mime } = getImageInfo(arrayBuffer);
+        globalImgCache[url] = { arrayBuffer, ext, mime };
+      } catch (e) {
+        console.warn(`Could not resolve image URL: ${url}.`, e);
+        if (!failedImageUrls.includes(url)) {
+          failedImageUrls.push(url);
+        }
+      }
+    }
+  }
+  
+  // Phase 2: Generate individual documents
+  progTextStep4.innerText = 'Generating documents';
+  for (let i = 0; i < total; i++) {
+    if (generatorCancelled) return;
+    const row = mappedRows[i];
+    const percent = Math.round(50 + (i / total) * 40); // 50% to 90%
+    
+    progFillStep4.style.width = `${percent}%`;
+    progPctStep4.innerText = `${percent}%`;
+    progSubStep4.innerText = `Filling variables & inserting images for document ${i + 1} of ${total}…`;
+    
+    const rowData = {};
+    for (const [vn, col] of Object.entries(fileMapping)) {
+      rowData[vn] = col ? String(row[col] ?? '') : '';
+    }
+    
+    // Substitute clean names fallback mapping
+    for (const [vn, col] of Object.entries(fileMapping)) {
+      if (isImageVar(vn)) {
+        const cleanName = getCleanVarName(vn);
+        rowData[cleanName] = col ? String(row[col] ?? '') : '';
+      }
+    }
+    
+    try {
+      const blob = await genDocx(templateBytes, rowData, globalImgCache);
+      const raw = filenameCol ? String(row[filenameCol] ?? '') : '';
+      const name = raw ? raw.replace(/[^a-zA-Z0-9_\-\.]/g, '_') + '.docx' : `document_${String(i + 1).padStart(3, '0')}.docx`;
+      generatedBlobs.push({name, blob});
+    } catch(e) {
+      showAlert(4, `Generation error on row ${i + 1}: ` + e.message);
+      progWrapStep4.style.display = 'none';
+      return;
+    }
+  }
+  
+  // Phase 3: Create Single Merged Combined Document
+  progFillStep4.style.width = '92%';
+  progPctStep4.innerText = '92%';
+  progSubStep4.innerText = 'Assembling single merged document file...';
+  
+  const mergedData = mappedRows.map(row => {
+    const rowData = {};
+    for (const [vn, col] of Object.entries(fileMapping)) {
+      rowData[vn] = col ? String(row[col] ?? '') : '';
+    }
+    for (const [vn, col] of Object.entries(fileMapping)) {
+      if (isImageVar(vn)) {
+        const cleanName = getCleanVarName(vn);
+        rowData[cleanName] = col ? String(row[col] ?? '') : '';
+      }
+    }
+    return rowData;
+  });
+  
+  try {
+    mergedBlobFile = await genMerged(templateBytes, mergedData, globalImgCache);
+  } catch(e) {
+    console.error("Merged generation exception", e);
+  }
+  
+  progFillStep4.style.width = '100%';
+  progPctStep4.innerText = '100%';
+  progSubStep4.innerText = 'Done!';
+  
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  
+  setTimeout(() => {
+    progWrapStep4.style.display = 'none';
+    showResultsScreen(elapsed);
+  }, 200);
+}
+
+function showResultsScreen(elapsedTime) {
+  // Update titles
+  document.getElementById('title-step4').innerText = 'Merge Job Finished';
+  document.getElementById('desc-step4').innerText = `Successfully created ${generatedBlobs.length} unique document${generatedBlobs.length !== 1 ? 's' : ''}. Download them individually, in bulk as a ZIP, or as a single combined file.`;
+  
+  // Update stats
+  document.getElementById('stat-val-count').innerText = generatedBlobs.length;
+  document.getElementById('stat-val-fields').innerText = Object.values(fileMapping).filter(Boolean).length;
+  document.getElementById('stat-val-time').innerText = `${elapsedTime}s`;
+  
+  // Update tag badges
+  document.getElementById('tag-files-count').innerHTML = SVGS.check + `&nbsp;${generatedBlobs.length} Files Ready`;
+  
+  const tagMergedReady = document.getElementById('tag-merged-ready');
+  const mergedBlock = document.getElementById('merged-block');
+  
+  if (mergedBlobFile) {
+    tagMergedReady.innerHTML = SVGS.merge + '&nbsp;Merged Document Ready';
+    tagMergedReady.style.display = 'inline-flex';
+    mergedBlock.style.display = 'block';
+  } else {
+    tagMergedReady.style.display = 'none';
+    mergedBlock.style.display = 'none';
+  }
+  
+  // Zip Button display
+  if (generatedBlobs.length > 1) {
+    btnDlZip.style.display = 'inline-flex';
+  } else {
+    btnDlZip.style.display = 'none';
+  }
+  
+  // Render Failed Images Local Backup Block
+  const localImgBackupBlock = document.getElementById('local-img-backup-block');
+  const localImgFailedList = document.getElementById('local-img-failed-list');
+  
+  if (failedImageUrls.length > 0) {
+    localImgBackupBlock.style.display = 'flex';
+    
+    let failedHtml = '';
+    failedImageUrls.forEach(url => {
+      const fileId = extractFileId(url);
+      
+      // Find rows having this failed url
+      const rowsHavingUrl = dataRows.map((row, idx) => {
+        const o = {};
+        dataHeaders.forEach((h, i) => { o[h] = row[i] !== undefined ? row[i] : ''; });
+        o._idx = idx + 1;
+        return o;
+      }).filter(row => {
+        const rowImgVars = Object.keys(fileMapping).filter(isImageVar);
+        return rowImgVars.some(v => {
+          const col = fileMapping[v];
+          return col && String(row[col] ?? '').trim() === url;
+        });
+      });
+      
+      const rowIdentifiers = rowsHavingUrl.map(r => {
+        const textCol = dataHeaders.find(h => String(r[h] ?? '').trim() && !isImageVar(h) && h.toLowerCase() !== 'id' && h.toLowerCase() !== 'age');
+        return textCol ? r[textCol] : `Row #${r._idx}`;
+      }).join(', ');
+      
+      failedHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 4px;">
+          <span>Row${rowsHavingUrl.length > 1 ? 's' : ''} [${escXml(rowIdentifiers)}]: ${escXml(fileId ? `Drive ID: ${fileId}` : url)}</span>
+          <span style="font-size: 11px; background: var(--red-l); color: #fda4af; padding: 2px 8px; border-radius: 4px;">Download Failed / CORS Blocked</span>
+        </div>
+      `;
+    });
+    
+    localImgFailedList.innerHTML = failedHtml;
+  } else {
+    localImgBackupBlock.style.display = 'none';
+  }
+  
+  // Render Individual List
+  const listContainer = document.getElementById('individual-results-list');
+  let listHtml = '';
+  
+  generatedBlobs.forEach((item, idx) => {
+    listHtml += `
+      <div class="result-item" style="animation-delay: ${idx * 12}ms;">
+        ${SVGS.word}
+        <span class="ri-num">#${String(idx + 1).padStart(3, '0')}</span>
+        <span class="ri-name" title="${escXml(item.name)}">${escXml(item.name)}</span>
+        <button class="btn btn-ghost btn-sm" onclick="dlBlobByIndex(${idx})">${SVGS.dl}&nbsp;Get</button>
+      </div>
+    `;
+  });
+  listContainer.innerHTML = listHtml;
+  
+  resultsContainer.style.display = 'block';
+}
+
+function dlBlobByIndex(idx) {
+  const item = generatedBlobs[idx];
+  if (item) {
+    dlBlob(item.blob, item.name);
+  }
+}
+
+/* ── Local Image Upload/Backup Logic ────────────────── */
+const localImgFilesPicker = document.getElementById('local-img-files-picker');
+const localImgDropZone = document.getElementById('local-img-drop-zone');
+
+localImgFilesPicker.addEventListener('change', e => {
+  const files = e.target.files;
+  if (files.length > 0) handleLocalImageUploads(files);
+});
+
+localImgDropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  localImgDropZone.style.borderColor = 'var(--primary)';
+  localImgDropZone.style.background = 'var(--primary-l)';
+});
+localImgDropZone.addEventListener('dragleave', () => {
+  localImgDropZone.style.borderColor = 'var(--border2)';
+  localImgDropZone.style.background = 'var(--surface3)';
+});
+localImgDropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  localImgDropZone.style.borderColor = 'var(--border2)';
+  localImgDropZone.style.background = 'var(--surface3)';
+  const files = e.dataTransfer.files;
+  if (files.length > 0) handleLocalImageUploads(files);
+});
+
+async function handleLocalImageUploads(files) {
+  let matchedCount = 0;
+  
+  const rowDataList = dataRows.map(row => {
+    const o = {};
+    dataHeaders.forEach((h, i) => {
+      o[h] = row[i] !== undefined ? row[i] : '';
+    });
+    return o;
+  });
+  
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const filenameNoExt = file.name.substring(0, file.name.lastIndexOf('.')).trim().toLowerCase();
+    
+    const arrayBuffer = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+    
+    const { ext, mime } = getImageInfo(arrayBuffer);
+    let matchedUrl = null;
+    
+    for (const url of failedImageUrls) {
+      const fileId = extractFileId(url).toLowerCase();
+      // Match by Google Drive file ID
+      if (fileId && fileId === filenameNoExt) {
+        matchedUrl = url;
+        break;
+      }
+      
+      // Match by Excel Row values (e.g. if row Name is "Alex Mercer" and filename is "Alex Mercer")
+      const matchedRow = rowDataList.find(row => {
+        const rowImgVars = Object.keys(fileMapping).filter(isImageVar);
+        const hasUrl = rowImgVars.some(v => {
+          const col = fileMapping[v];
+          return col && String(row[col] ?? '').trim() === url;
+        });
+        
+        if (hasUrl) {
+          return dataHeaders.some(h => {
+            const val = String(row[h] ?? '').trim().toLowerCase();
+            return val && (val === filenameNoExt || val.replace(/[^a-z0-9]/g, '') === filenameNoExt.replace(/[^a-z0-9]/g, ''));
+          });
+        }
+        return false;
+      });
+      
+      if (matchedRow) {
+        matchedUrl = url;
+        break;
+      }
+    }
+    
+    if (matchedUrl) {
+      globalImgCache[matchedUrl] = { arrayBuffer, ext, mime };
+      failedImageUrls = failedImageUrls.filter(u => u !== matchedUrl);
+      matchedCount++;
+    }
+  }
+  
+  if (matchedCount > 0) {
+    showAlert(4, null);
+    progWrapStep4.style.display = 'block';
+    resultsContainer.style.display = 'none';
+    
+    // Re-generate using updated cached images
+    startGenerator();
+  } else {
+    alert("Could not match the uploaded images to any failed rows. Please make sure the image filename matches either the Google Drive file ID (e.g. 1DCTnmlm...) or the corresponding row value (e.g. Alex Mercer) in the Excel sheet.");
+  }
+}
+
+/* ── Restart App Logic ──────────────────────────────── */
+function restartApp() {
+  templateFile = null;
+  templateBytes = null;
+  templateVariables = [];
+  dataFile = null;
+  dataHeaders = [];
+  dataRows = [];
+  fileMapping = {};
+  filenameCol = "";
+  generatedBlobs = [];
+  mergedBlobFile = null;
+  
+  globalImgCache = {};
+  failedImageUrls = [];
+  
+  // Reset Step 1 UI
+  fileInputStep1.value = "";
+  fbStep1.style.display = 'none';
+  dzStep1.style.display = 'block';
+  btnScanStep1.setAttribute('disabled', 'true');
+  showAlert(1, null);
+  
+  // Reset Step 2 UI
+  fileInputStep2.value = "";
+  fbStep2.style.display = 'none';
+  dzStep2.style.display = 'block';
+  previewWrapStep2.style.display = 'none';
+  btnContinueStep2.setAttribute('disabled', 'true');
+  showAlert(2, null);
+  
+  // Reset Step 4 UI
+  document.getElementById('title-step4').innerText = 'Generating Documents...';
+  document.getElementById('desc-step4').innerText = 'Combining data rows with placeholders and embedding media structures.';
+  progFillStep4.style.width = '0%';
+  progPctStep4.innerText = '0%';
+  progSubStep4.innerText = 'Initializing...';
+  resultsContainer.style.display = 'none';
+  document.getElementById('local-img-backup-block').style.display = 'none';
+  showAlert(4, null);
+  
+  showStep(1);
+}
+
+/* ── General Helpers ────────────────────────────────── */
+const fmtSz = b => b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(1) + ' MB';
+
+// Initialize
+showStep(1);
+</script>
+</body>
+</html>
