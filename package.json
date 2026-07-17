@@ -1,0 +1,10 @@
+{
+  "name": "docgen-studio",
+  "version": "1.0.0",
+  "description": "Document Merge Studio Clone",
+  "scripts": {
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
