@@ -199,6 +199,9 @@ body{background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;min-h
 .tag-green { background: var(--green-l); color: var(--green-d); border: 1px solid rgba(16, 185, 129, 0.3); }
 .tag-violet { background: var(--violet-l); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
 
+.layout-card:hover { border-color: var(--border2); background: var(--surface3)!important; }
+.layout-card.active { border-color: var(--primary)!important; background: var(--primary-l)!important; }
+
 .step-panel { display: none; }
 .step-panel.active { display: block; }
 
@@ -213,6 +216,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;min-h
   .row-btns { flex-direction: column; } .row-btns .btn { justify-content: center; width: 100%; }
   .dl-head { flex-direction: column; align-items: flex-start; }
   .fn-row { flex-direction: column; align-items: stretch; gap: 8px; } .fn-label { font-size: 12px; }
+  #layout-options-grid { grid-template-columns: 1fr!important; }
   .file-badge { gap: 12px; }
   .fb-pill { align-self: flex-start; margin-top: 4px; }
 }
@@ -329,6 +333,36 @@ body{background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;min-h
           <select class="map-select" style="flex: 1; min-width: 0;" id="select-filename-col">
             <option value="">— Use auto-incrementing numbers (e.g. document_001.docx) —</option>
           </select>
+        </div>
+
+        <!-- Layout Selection Mode -->
+        <div style="background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r2); padding: 18px 20px; margin-bottom: 24px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div style="font-size: 13.5px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px;">
+              <span id="layout-icon"></span>
+              Page Layout &amp; Records per Page
+            </div>
+            <span class="tag tag-violet" id="layout-summary-badge" style="font-size: 11.5px;">1 Record per Page</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" id="layout-options-grid">
+            <label class="layout-card active" id="label-layout-1" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: var(--surface); border: 1.5px solid var(--primary); border-radius: var(--r3); cursor: pointer; transition: all 0.2s;">
+              <input type="radio" name="pageLayoutMode" value="1" checked style="margin-top: 3px; accent-color: var(--primary);" onchange="onLayoutModeChange(1)" />
+              <div>
+                <div style="font-size: 13px; font-weight: 700; color: var(--ink);">1 Record per Page</div>
+                <div style="font-size: 11.5px; color: var(--ink3); margin-top: 2px;">Standard layout. Each row in Excel creates a new page.</div>
+              </div>
+            </label>
+            <label class="layout-card" id="label-layout-2" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r3); cursor: pointer; transition: all 0.2s;">
+              <input type="radio" name="pageLayoutMode" value="2" style="margin-top: 3px; accent-color: var(--primary);" onchange="onLayoutModeChange(2)" />
+              <div>
+                <div style="font-size: 13px; font-weight: 700; color: var(--ink);">2 Records per Page (Dual Template)</div>
+                <div style="font-size: 11.5px; color: var(--ink3); margin-top: 2px;">For 2 identical copies on one page (Top copy &rarr; Record 1, Bottom copy &rarr; Record 2).</div>
+              </div>
+            </label>
+          </div>
+          <div id="layout-hint-text" style="font-size: 12px; color: var(--primary); margin-top: 12px; display: none; background: var(--primary-l); padding: 9px 14px; border-radius: var(--r3); border: 1px solid rgba(99,102,241,0.25); line-height: 1.5;">
+            ⚡ <strong>Dual Mode Active:</strong> For each page, the 1st occurrence of placeholders (e.g. <code>&lt;&lt;Name&gt;&gt;</code>, <code>&lt;&lt;img:Photo&gt;&gt;</code>) fills with Student 1, and the 2nd occurrence fills with Student 2, advancing 2 rows per page.
+          </div>
         </div>
 
         <div class="map-head">
@@ -453,6 +487,7 @@ const SVGS = {
   shield: '<svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M6 1L2 2.5v3C2 8.5 4 11 6 11.5 8 11 10 8.5 10 5.5v-3L6 1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>',
   file: '<svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M2 2h5.5L10 4.5V10.5a.5.5 0 01-.5.5h-7a.5.5 0 01-.5-.5V2.5A.5.5 0 012 2z" stroke="currentColor" stroke-width="1.2"/><path d="M7.5 2v3H10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
   image: '<svg width="14" height="14" viewBox="0 0 13 13" fill="none"><rect x="1.5" y="1.5" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="4.5" cy="4.5" r="1.2" fill="currentColor"/><path d="M2 10.5l3-3 2.5 2.5 3.5-4 1.5 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  layout: '<svg width="15" height="15" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="11" height="4.5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1.5" y="8" width="11" height="4.5" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>',
 };
 
 /* ── UI Elements Setup (Static Icons Injection) ──────── */
@@ -470,6 +505,7 @@ document.getElementById('btn-back-step2').innerHTML = SVGS.left + 'Back';
 document.getElementById('btn-continue-step2').innerHTML = SVGS.right + 'Continue';
 
 document.getElementById('file-icon-fn').innerHTML = SVGS.file;
+document.getElementById('layout-icon').innerHTML = SVGS.layout;
 document.getElementById('btn-back-step3').innerHTML = SVGS.left + 'Back';
 document.getElementById('btn-generate-step3').innerHTML = SVGS.bolt + 'Generate Studio Docs';
 
@@ -494,6 +530,7 @@ let dataHeaders = [];
 let dataRows = [];
 let fileMapping = {};
 let filenameCol = "";
+let pageLayoutMode = 1; // 1 = 1 record/page, 2 = 2 records/page (dual template)
 
 let generatedBlobs = []; // [{name, blob}]
 let mergedBlobFile = null;
@@ -560,6 +597,54 @@ function replaceVars(xml, data){
     r = r.replace(new RegExp(`&lt;&lt;${kk}&gt;&gt;`, 'g'), e).replace(new RegExp(`<<${kk}>>`, 'g'), e);
   }
   return r;
+}
+
+function replaceVarsDual(xml, data1, data2){
+  let r = xml;
+  const allKeys = new Set([...Object.keys(data1 || {}), ...Object.keys(data2 || {})]);
+  for(const k of allKeys){
+    const v1 = (data1 && data1[k] !== undefined && data1[k] !== null) ? String(data1[k]) : '';
+    const v2 = (data2 && data2[k] !== undefined && data2[k] !== null) ? String(data2[k]) : '';
+    const e1 = escXml(v1);
+    const e2 = escXml(v2);
+    const kk = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(?:&lt;&lt;|<<)${kk}(?:&gt;&gt;|>>)`, 'g');
+    
+    const matches = r.match(regex);
+    if(!matches) continue;
+    
+    const totalOcc = matches.length;
+    const midPoint = Math.ceil(totalOcc / 2);
+    let currentOcc = 0;
+    
+    r = r.replace(regex, () => {
+      currentOcc++;
+      return currentOcc <= midPoint ? e1 : e2;
+    });
+  }
+  return r;
+}
+
+function onLayoutModeChange(mode) {
+  pageLayoutMode = mode;
+  const l1 = document.getElementById('label-layout-1');
+  const l2 = document.getElementById('label-layout-2');
+  const hint = document.getElementById('layout-hint-text');
+  const badge = document.getElementById('layout-summary-badge');
+  
+  if (mode === 2) {
+    if (l1) { l1.classList.remove('active'); l1.style.borderColor = 'var(--border)'; }
+    if (l2) { l2.classList.add('active'); l2.style.borderColor = 'var(--primary)'; }
+    if (hint) hint.style.display = 'block';
+    const totalRows = dataRows.length;
+    const pages = Math.ceil(totalRows / 2);
+    if (badge) badge.innerText = `2 Records per Page · ${pages} Pages (${totalRows} records)`;
+  } else {
+    if (l1) { l1.classList.add('active'); l1.style.borderColor = 'var(--primary)'; }
+    if (l2) { l2.classList.remove('active'); l2.style.borderColor = 'var(--border)'; }
+    if (hint) hint.style.display = 'none';
+    if (badge) badge.innerText = `1 Record per Page · ${dataRows.length} Pages`;
+  }
 }
 
 function mergeRuns(xml){
@@ -850,6 +935,66 @@ function processImagesInXml(xml, rowData, imgCache, relsXml, addFileToZipCallbac
   return { xml: updatedXml, relsXml: updatedRelsXml };
 }
 
+function processImagesInXmlDual(xml, rowData1, rowData2, imgCache, relsXml, addFileToZipCallback) {
+  let updatedXml = xml;
+  let updatedRelsXml = relsXml;
+  let relIdCounter = getNextRelId(relsXml);
+  const localRelsMap = {};
+
+  const re = /(?:&lt;&lt;|<<)(img|image):([^:>]+)(?::([^>]+))?(?:&gt;&gt;|>>)/gi;
+  
+  // First count occurrences of each image variable in the template xml
+  const matches = [...xml.matchAll(re)];
+  const varCounts = {};
+  matches.forEach(m => {
+    const vn = m[2].trim();
+    varCounts[vn] = (varCounts[vn] || 0) + 1;
+  });
+  
+  const varCurrentOcc = {};
+
+  updatedXml = updatedXml.replace(re, (match, prefix, varName, dimStr) => {
+    varName = varName.trim();
+    const totalOcc = varCounts[varName] || 1;
+    const midPoint = Math.ceil(totalOcc / 2);
+    
+    varCurrentOcc[varName] = (varCurrentOcc[varName] || 0) + 1;
+    const currentOcc = varCurrentOcc[varName];
+    
+    const targetData = (currentOcc <= midPoint) ? rowData1 : rowData2;
+    if (!targetData) return '';
+    
+    const url = targetData[varName] || targetData[`img:${varName}`] || targetData[`image:${varName}`];
+    if (!url) return '';
+    
+    if (localRelsMap[url]) {
+      const relId = localRelsMap[url];
+      const { cx, cy } = parseDimPair(dimStr);
+      return createImageDrawingXml(relId, cx, cy, varName);
+    }
+    
+    const imgData = imgCache[url];
+    if (!imgData) {
+      return `[Image Load Error: ${escXml(varName)}]`;
+    }
+    
+    const imgId = relIdCounter++;
+    const filename = `image_${imgId}.${imgData.ext}`;
+    const zipPath = `word/media/${filename}`;
+    
+    addFileToZipCallback(zipPath, new Uint8Array(imgData.arrayBuffer));
+    
+    const relId = `rId${imgId}`;
+    updatedRelsXml = addRelationship(updatedRelsXml, relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image', `media/${filename}`);
+    localRelsMap[url] = relId;
+    
+    const { cx, cy } = parseDimPair(dimStr);
+    return createImageDrawingXml(relId, cx, cy, varName);
+  });
+  
+  return { xml: updatedXml, relsXml: updatedRelsXml };
+}
+
 async function genDocx(tb, data, imgCache) {
   const zip = await JSZip.loadAsync(tb);
   const nz = new JSZip();
@@ -928,7 +1073,85 @@ async function genDocx(tb, data, imgCache) {
   return nz.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 }
 
-async function genMerged(tb, allData, imgCache) {
+async function genDocxDual(tb, data1, data2, imgCache) {
+  const zip = await JSZip.loadAsync(tb);
+  const nz = new JSZip();
+  
+  const files = {};
+  const ps = [];
+  
+  zip.forEach((p, f) => {
+    if (p.endsWith('.xml') || p.endsWith('.rels') || p.includes('[Content_Types]')) {
+      ps.push(f.async('string').then(x => { files[p] = x; }));
+    } else {
+      ps.push(f.async('uint8array').then(b => { files[p] = b; }));
+    }
+  });
+  
+  await Promise.all(ps);
+  
+  let contentTypesXml = files['[Content_Types].xml'] || '';
+  if (contentTypesXml) {
+    let newTypes = '';
+    if (!contentTypesXml.includes('Extension="png"') && !contentTypesXml.includes('extension="png"')) {
+      newTypes += '<Default Extension="png" ContentType="image/png"/>';
+    }
+    if (!contentTypesXml.includes('Extension="jpeg"') && !contentTypesXml.includes('extension="jpeg"')) {
+      newTypes += '<Default Extension="jpeg" ContentType="image/jpeg"/>';
+    }
+    if (!contentTypesXml.includes('Extension="jpg"') && !contentTypesXml.includes('extension="jpg"')) {
+      newTypes += '<Default Extension="jpg" ContentType="image/jpeg"/>';
+    }
+    if (!contentTypesXml.includes('Extension="gif"') && !contentTypesXml.includes('extension="gif"')) {
+      newTypes += '<Default Extension="gif" ContentType="image/gif"/>';
+    }
+    if (newTypes) {
+      contentTypesXml = contentTypesXml.replace(/<\/Types>/i, `${newTypes}</Types>`);
+    }
+    files['[Content_Types].xml'] = contentTypesXml;
+  }
+  
+  const docFiles = Object.keys(files).filter(p => p.match(/^word\/(document|header\d+|footer\d+)\.xml$/));
+  
+  for (const docFile of docFiles) {
+    let xmlContent = files[docFile];
+    if (xmlContent.includes('img:') || xmlContent.includes('image:') || xmlContent.includes('&lt;&lt;img:') || xmlContent.includes('&lt;&lt;image:')) {
+      const parts = docFile.split('/');
+      const filename = parts.pop();
+      const parentDir = parts.join('/');
+      const relsFile = `${parentDir}/_rels/${filename}.rels`;
+      
+      let relsXml = files[relsFile];
+      if (!relsXml) {
+        relsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`;
+      }
+      
+      xmlContent = mergeRuns(xmlContent);
+      const result = processImagesInXmlDual(xmlContent, data1, data2, imgCache, relsXml, (path, dataBytes) => {
+        files[path] = dataBytes;
+      });
+      
+      files[docFile] = result.xml;
+      files[relsFile] = result.relsXml;
+    }
+  }
+  
+  for (const [p, content] of Object.entries(files)) {
+    if (typeof content === 'string') {
+      if (p.endsWith('.xml') && !p.includes('[Content_Types]') && !p.includes('_rels/')) {
+        files[p] = replaceVarsDual(mergeRuns(content), data1, data2);
+      }
+    }
+  }
+  
+  for (const [p, content] of Object.entries(files)) {
+    nz.file(p, content);
+  }
+  
+  return nz.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+async function genMerged(tb, allData, imgCache, isDual = false) {
   const zip = await JSZip.loadAsync(tb);
   const nz = new JSZip();
   let doc = null;
@@ -978,18 +1201,26 @@ async function genMerged(tb, allData, imgCache) {
   }
   
   const pages = [];
-  for (let i = 0; i < allData.length; i++) {
-    const row = allData[i];
-    let pageXml = replaceVars(mt, row);
+  const step = isDual ? 2 : 1;
+  for (let i = 0; i < allData.length; i += step) {
+    const row1 = allData[i];
+    const row2 = isDual ? (allData[i + 1] || {}) : null;
     
-    const result = processImagesInXml(pageXml, row, imgCache, relsXml, (path, dataBytes) => {
-      files[path] = dataBytes;
-    });
+    let pageXml = isDual ? replaceVarsDual(mt, row1, row2) : replaceVars(mt, row1);
+    
+    const result = isDual
+      ? processImagesInXmlDual(pageXml, row1, row2, imgCache, relsXml, (path, dataBytes) => {
+          files[path] = dataBytes;
+        })
+      : processImagesInXml(pageXml, row1, imgCache, relsXml, (path, dataBytes) => {
+          files[path] = dataBytes;
+        });
     
     pageXml = result.xml;
     relsXml = result.relsXml;
     
-    pages.push(pageXml + (i < allData.length - 1 ? PB : ''));
+    const isLastPage = (i + step) >= allData.length;
+    pages.push(pageXml + (!isLastPage ? PB : ''));
   }
   
   files['word/document.xml'] = bb + pages.join('') + sectPr + '</w:body>' + ab.slice('</w:body>'.length);
@@ -1288,6 +1519,7 @@ function setupMappingScreen() {
   
   mappingRowsContainer.innerHTML = mappingHtml;
   updateMappingCount();
+  onLayoutModeChange(pageLayoutMode);
 }
 
 function onMappingSelectChange(selectEl) {
@@ -1418,32 +1650,62 @@ async function startGenerator() {
   
   // Phase 2: Generate individual documents
   progTextStep4.innerText = 'Generating documents';
-  for (let i = 0; i < total; i++) {
+  const isDual = (pageLayoutMode === 2);
+  const step = isDual ? 2 : 1;
+  const numDocs = Math.ceil(total / step);
+
+  for (let i = 0; i < total; i += step) {
     if (generatorCancelled) return;
-    const row = mappedRows[i];
-    const percent = Math.round(50 + (i / total) * 40); // 50% to 90%
+    const docIdx = Math.floor(i / step);
+    const percent = Math.round(50 + (docIdx / numDocs) * 40); // 50% to 90%
     
     progFillStep4.style.width = `${percent}%`;
     progPctStep4.innerText = `${percent}%`;
-    progSubStep4.innerText = `Filling variables & inserting images for document ${i + 1} of ${total}…`;
+    progSubStep4.innerText = isDual 
+      ? `Processing page ${docIdx + 1} of ${numDocs} (records ${i + 1}${i + 2 <= total ? ' & ' + (i + 2) : ''})...`
+      : `Filling variables & inserting images for document ${i + 1} of ${total}…`;
     
-    const rowData = {};
+    const row1 = mappedRows[i];
+    const row2 = isDual ? (mappedRows[i + 1] || null) : null;
+
+    const rowData1 = {};
     for (const [vn, col] of Object.entries(fileMapping)) {
-      rowData[vn] = col ? String(row[col] ?? '') : '';
-    }
-    
-    // Substitute clean names fallback mapping
-    for (const [vn, col] of Object.entries(fileMapping)) {
+      rowData1[vn] = col ? String(row1[col] ?? '') : '';
       if (isImageVar(vn)) {
         const cleanName = getCleanVarName(vn);
-        rowData[cleanName] = col ? String(row[col] ?? '') : '';
+        rowData1[cleanName] = col ? String(row1[col] ?? '') : '';
+      }
+    }
+    
+    let rowData2 = {};
+    if (isDual && row2) {
+      for (const [vn, col] of Object.entries(fileMapping)) {
+        rowData2[vn] = col ? String(row2[col] ?? '') : '';
+        if (isImageVar(vn)) {
+          const cleanName = getCleanVarName(vn);
+          rowData2[cleanName] = col ? String(row2[col] ?? '') : '';
+        }
       }
     }
     
     try {
-      const blob = await genDocx(templateBytes, rowData, globalImgCache);
-      const raw = filenameCol ? String(row[filenameCol] ?? '') : '';
-      const name = raw ? raw.replace(/[^a-zA-Z0-9_\-\.]/g, '_') + '.docx' : `document_${String(i + 1).padStart(3, '0')}.docx`;
+      const blob = isDual
+        ? await genDocxDual(templateBytes, rowData1, rowData2, globalImgCache)
+        : await genDocx(templateBytes, rowData1, globalImgCache);
+
+      let name = '';
+      if (filenameCol) {
+        const raw1 = String(row1[filenameCol] ?? '').trim().replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+        if (isDual && row2) {
+          const raw2 = String(row2[filenameCol] ?? '').trim().replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+          name = (raw1 && raw2) ? `${raw1}_${raw2}.docx` : (raw1 ? `${raw1}.docx` : `page_${String(docIdx + 1).padStart(3, '0')}.docx`);
+        } else {
+          name = raw1 ? `${raw1}.docx` : `document_${String(docIdx + 1).padStart(3, '0')}.docx`;
+        }
+      } else {
+        name = isDual ? `page_${String(docIdx + 1).padStart(3, '0')}.docx` : `document_${String(docIdx + 1).padStart(3, '0')}.docx`;
+      }
+
       generatedBlobs.push({name, blob});
     } catch(e) {
       showAlert(4, `Generation error on row ${i + 1}: ` + e.message);
@@ -1461,8 +1723,6 @@ async function startGenerator() {
     const rowData = {};
     for (const [vn, col] of Object.entries(fileMapping)) {
       rowData[vn] = col ? String(row[col] ?? '') : '';
-    }
-    for (const [vn, col] of Object.entries(fileMapping)) {
       if (isImageVar(vn)) {
         const cleanName = getCleanVarName(vn);
         rowData[cleanName] = col ? String(row[col] ?? '') : '';
@@ -1472,7 +1732,7 @@ async function startGenerator() {
   });
   
   try {
-    mergedBlobFile = await genMerged(templateBytes, mergedData, globalImgCache);
+    mergedBlobFile = await genMerged(templateBytes, mergedData, globalImgCache, isDual);
   } catch(e) {
     console.error("Merged generation exception", e);
   }
@@ -1491,8 +1751,12 @@ async function startGenerator() {
 
 function showResultsScreen(elapsedTime) {
   // Update titles
+  const isDual = (pageLayoutMode === 2);
+  const totalRows = dataRows.length;
   document.getElementById('title-step4').innerText = 'Merge Job Finished';
-  document.getElementById('desc-step4').innerText = `Successfully created ${generatedBlobs.length} unique document${generatedBlobs.length !== 1 ? 's' : ''}. Download them individually, in bulk as a ZIP, or as a single combined file.`;
+  document.getElementById('desc-step4').innerText = isDual
+    ? `Successfully processed ${totalRows} data rows into ${generatedBlobs.length} dual-record pages (2 records per page). Download them individually, in bulk as a ZIP, or as a single combined file.`
+    : `Successfully created ${generatedBlobs.length} unique document${generatedBlobs.length !== 1 ? 's' : ''}. Download them individually, in bulk as a ZIP, or as a single combined file.`;
   
   // Update stats
   document.getElementById('stat-val-count').innerText = generatedBlobs.length;
