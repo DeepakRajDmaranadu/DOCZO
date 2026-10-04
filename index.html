@@ -199,11 +199,29 @@ body{background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;min-h
 .tag-green { background: var(--green-l); color: var(--green-d); border: 1px solid rgba(16, 185, 129, 0.3); }
 .tag-violet { background: var(--violet-l); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
 
-.layout-card:hover { border-color: var(--border2); background: var(--surface3)!important; }
-.layout-card.active { border-color: var(--primary)!important; background: var(--primary-l)!important; }
+.layout-preset-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 10px 8px; border-radius: var(--r3); background: var(--surface);
+  border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; color: var(--ink);
+  font-family: 'Outfit', sans-serif; min-height: 58px;
+}
+.layout-preset-btn:hover { border-color: var(--border2); background: var(--surface3); }
+.layout-preset-btn.active { border-color: var(--primary)!important; background: var(--primary-l)!important; }
+.preset-num { font-size: 15px; font-weight: 800; font-family: 'JetBrains Mono', monospace; line-height: 1.2; }
+.preset-label { font-size: 11px; color: var(--ink3); margin-top: 3px; white-space: nowrap; }
+.layout-preset-btn.active .preset-num { color: var(--primary); }
+.layout-preset-btn.active .preset-label { color: var(--ink); font-weight: 600; }
+.layout-custom-box { transition: all 0.2s; min-height: 58px; }
+.layout-custom-box:hover { border-color: var(--border2); background: var(--surface3)!important; }
+.layout-custom-box.active { border-color: var(--primary)!important; background: var(--primary-l)!important; }
 
 .step-panel { display: none; }
 .step-panel.active { display: block; }
+
+@media(max-width:768px){
+  #layout-options-grid { grid-template-columns: repeat(2, 1fr)!important; }
+  #box-custom-layout { grid-column: 1 / -1; justify-content: center; }
+}
 
 @media(max-width:600px){
   .topbar { padding: 0 16px; }
@@ -216,7 +234,6 @@ body{background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;min-h
   .row-btns { flex-direction: column; } .row-btns .btn { justify-content: center; width: 100%; }
   .dl-head { flex-direction: column; align-items: flex-start; }
   .fn-row { flex-direction: column; align-items: stretch; gap: 8px; } .fn-label { font-size: 12px; }
-  #layout-options-grid { grid-template-columns: 1fr!important; }
   .file-badge { gap: 12px; }
   .fb-pill { align-self: flex-start; margin-top: 4px; }
 }
@@ -344,28 +361,28 @@ body{background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;min-h
             </div>
             <span class="tag tag-violet" id="layout-summary-badge" style="font-size: 11.5px;">1 Record per Page</span>
           </div>
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;" id="layout-options-grid">
-            <label class="layout-card active" id="label-layout-1" style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: var(--surface); border: 1.5px solid var(--primary); border-radius: var(--r3); cursor: pointer; transition: all 0.2s;">
-              <input type="radio" name="pageLayoutMode" value="1" checked style="margin-top: 3px; accent-color: var(--primary);" onchange="onLayoutModeChange(1)" />
-              <div>
-                <div style="font-size: 13px; font-weight: 700; color: var(--ink);">1 Record per Page</div>
-                <div style="font-size: 11.5px; color: var(--ink3); margin-top: 2px;">Standard layout. 1 row = 1 page.</div>
-              </div>
-            </label>
-            <label class="layout-card" id="label-layout-2" style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r3); cursor: pointer; transition: all 0.2s;">
-              <input type="radio" name="pageLayoutMode" value="2" style="margin-top: 3px; accent-color: var(--primary);" onchange="onLayoutModeChange(2)" />
-              <div>
-                <div style="font-size: 13px; font-weight: 700; color: var(--ink);">2 Records per Page (Dual)</div>
-                <div style="font-size: 11.5px; color: var(--ink3); margin-top: 2px;">Top &amp; Bottom copies (2 records/page).</div>
-              </div>
-            </label>
-            <label class="layout-card" id="label-layout-3" style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r3); cursor: pointer; transition: all 0.2s;">
-              <input type="radio" name="pageLayoutMode" value="3" style="margin-top: 3px; accent-color: var(--primary);" onchange="onLayoutModeChange(3)" />
-              <div>
-                <div style="font-size: 13px; font-weight: 700; color: var(--ink);">3 Records per Page (Triple)</div>
-                <div style="font-size: 11.5px; color: var(--ink3); margin-top: 2px;">Table 1 &rarr; Row 1, Table 2 &rarr; Row 2, Table 3 &rarr; Row 3.</div>
-              </div>
-            </label>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr) 1.5fr; gap: 10px;" id="layout-options-grid">
+            <button type="button" class="layout-preset-btn active" id="btn-preset-1" onclick="setLayoutRecords(1)">
+              <span class="preset-num">1</span>
+              <span class="preset-label">Standard (1/page)</span>
+            </button>
+            <button type="button" class="layout-preset-btn" id="btn-preset-2" onclick="setLayoutRecords(2)">
+              <span class="preset-num">2</span>
+              <span class="preset-label">Dual (2/page)</span>
+            </button>
+            <button type="button" class="layout-preset-btn" id="btn-preset-3" onclick="setLayoutRecords(3)">
+              <span class="preset-num">3</span>
+              <span class="preset-label">Triple (3/page)</span>
+            </button>
+            <button type="button" class="layout-preset-btn" id="btn-preset-4" onclick="setLayoutRecords(4)">
+              <span class="preset-num">4</span>
+              <span class="preset-label">Quad (4/page)</span>
+            </button>
+            <div class="layout-custom-box" id="box-custom-layout" style="display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r3); padding: 6px 12px; cursor: pointer;" onclick="focusCustomInput()">
+              <span style="font-size: 12px; font-weight: 600; color: var(--ink2); white-space: nowrap;">Custom:</span>
+              <input type="number" id="input-custom-records" min="1" max="50" placeholder="e.g. 6" style="width: 50px; background: var(--surface2); border: 1px solid var(--border2); color: var(--ink); border-radius: 6px; padding: 4px 6px; font-size: 13px; font-weight: 700; text-align: center; font-family: 'JetBrains Mono', monospace;" oninput="onCustomRecordsInput(this.value)" onclick="event.stopPropagation()" />
+              <span style="font-size: 11px; color: var(--ink3); white-space: nowrap;">/ page</span>
+            </div>
           </div>
           <div id="layout-hint-text" style="font-size: 12px; color: var(--primary); margin-top: 12px; display: none; background: var(--primary-l); padding: 9px 14px; border-radius: var(--r3); border: 1px solid rgba(99,102,241,0.25); line-height: 1.5;"></div>
         </div>
@@ -636,43 +653,84 @@ function replaceVarsDual(xml, data1, data2){
   return replaceVarsMulti(xml, [data1, data2]);
 }
 
-function onLayoutModeChange(mode) {
-  pageLayoutMode = mode;
-  const l1 = document.getElementById('label-layout-1');
-  const l2 = document.getElementById('label-layout-2');
-  const l3 = document.getElementById('label-layout-3');
-  const hint = document.getElementById('layout-hint-text');
-  const badge = document.getElementById('layout-summary-badge');
-  const totalRows = dataRows.length;
+function setLayoutRecords(num, fromCustom = false) {
+  num = Math.max(1, Math.min(50, parseInt(num) || 1));
+  pageLayoutMode = num;
   
-  [l1, l2, l3].forEach(l => {
-    if (l) {
-      l.classList.remove('active');
-      l.style.borderColor = 'var(--border)';
+  const presets = [1, 2, 3, 4];
+  const isPreset = presets.includes(num) && !fromCustom;
+  
+  presets.forEach(n => {
+    const btn = document.getElementById(`btn-preset-${n}`);
+    if (btn) {
+      if (isPreset && num === n) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
     }
   });
-
-  if (mode === 3) {
-    if (l3) { l3.classList.add('active'); l3.style.borderColor = 'var(--primary)'; }
-    if (hint) {
-      hint.style.display = 'block';
-      hint.innerHTML = '⚡ <strong>Triple Mode Active:</strong> For each page, Table 1 &rarr; Record 1, Table 2 &rarr; Record 2, Table 3 &rarr; Record 3, advancing 3 records per page.';
+  
+  const customBox = document.getElementById('box-custom-layout');
+  const customInput = document.getElementById('input-custom-records');
+  if (customBox) {
+    if (!isPreset || fromCustom) {
+      customBox.classList.add('active');
+      if (customInput && customInput.value !== String(num)) {
+        customInput.value = num;
+      }
+    } else {
+      customBox.classList.remove('active');
     }
-    const pages = Math.ceil(totalRows / 3);
-    if (badge) badge.innerText = `3 Records per Page · ${pages} Pages (${totalRows} records)`;
-  } else if (mode === 2) {
-    if (l2) { l2.classList.add('active'); l2.style.borderColor = 'var(--primary)'; }
-    if (hint) {
-      hint.style.display = 'block';
-      hint.innerHTML = '⚡ <strong>Dual Mode Active:</strong> Top copy fills with Record 1, bottom copy fills with Record 2, advancing 2 records per page.';
-    }
-    const pages = Math.ceil(totalRows / 2);
-    if (badge) badge.innerText = `2 Records per Page · ${pages} Pages (${totalRows} records)`;
-  } else {
-    if (l1) { l1.classList.add('active'); l1.style.borderColor = 'var(--primary)'; }
-    if (hint) hint.style.display = 'none';
-    if (badge) badge.innerText = `1 Record per Page · ${totalRows} Pages`;
   }
+  
+  const hint = document.getElementById('layout-hint-text');
+  const badge = document.getElementById('layout-summary-badge');
+  const totalRows = (dataRows && dataRows.length) ? dataRows.length : 0;
+  const pages = totalRows > 0 ? Math.ceil(totalRows / num) : 0;
+  
+  if (badge) {
+    badge.innerText = num === 1
+      ? `1 Record per Page · ${totalRows} Pages`
+      : `${num} Records per Page · ${pages} Pages (${totalRows} records)`;
+  }
+  
+  if (hint) {
+    if (num === 1) {
+      hint.style.display = 'none';
+    } else {
+      hint.style.display = 'block';
+      let tableDesc = '';
+      if (num === 2) tableDesc = 'Top copy &rarr; Record 1, Bottom copy &rarr; Record 2';
+      else if (num === 3) tableDesc = 'Table 1 &rarr; Record 1, Table 2 &rarr; Record 2, Table 3 &rarr; Record 3';
+      else if (num === 4) tableDesc = 'Table 1 &rarr; Record 1, Table 2 &rarr; Record 2, Table 3 &rarr; Record 3, Table 4 &rarr; Record 4';
+      else tableDesc = `Distributes placeholders sequentially across all ${num} tables/cards`;
+      
+      hint.innerHTML = `⚡ <strong>${num} Records per Page Active:</strong> For each page: ${tableDesc}, advancing ${num} records per page.`;
+    }
+  }
+}
+
+function onCustomRecordsInput(val) {
+  const n = parseInt(val);
+  if (!isNaN(n) && n >= 1) {
+    setLayoutRecords(n, true);
+  }
+}
+
+function focusCustomInput() {
+  const customInput = document.getElementById('input-custom-records');
+  if (customInput) {
+    customInput.focus();
+    if (!customInput.value) {
+      customInput.value = pageLayoutMode > 4 ? pageLayoutMode : '4';
+    }
+    setLayoutRecords(parseInt(customInput.value) || 4, true);
+  }
+}
+
+function onLayoutModeChange(mode) {
+  setLayoutRecords(mode);
 }
 
 function mergeRuns(xml){
